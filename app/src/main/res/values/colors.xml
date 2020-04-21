@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- base color -->
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#03DAC5</color>
+
+    <!-- main color -->
+    <color name="colorwhite">#FFFFFF</color>
+    <color name="colorblack">#1E1E1E</color>
+    <color name="colormain">#00B594</color>
+
+    <!-- nav color -->
+    <color name="colornavhed">#F2F2F2</color>
+    <color name="colortext">#757575</color>
+
+    <!-- button color -->
+    <color name="colorcilipboard">#4A566E</color>
+</resources>

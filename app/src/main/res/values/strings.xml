@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">image_download</string>
+
+    <!-- nav commend -->
+    <string name="navigation_drawer_open">Drawer Open</string>
+    <string name="navigation_drawer_close">Drawer Closed</string>
+
+    <!-- nav item -->
+    <string name="download_control">Download Control</string>
+    <string name="tutorial">Tutorial</string>
+    <string name="setting">Setting</string>
+    <string name="info">Info</string>
+
+    <!-- main text -->
+    <string name="main_text">URL</string>
+
+    <!-- button text -->
+    <string name="download_button">download</string>
+    <string name="cilpboard_button">clipboard</string>
+
+    <!-- edit text-->
+    <string name="ex_text">url_input</string>
+
+    <!-- download text-->
+    <string name="download">download</string>
+</resources>

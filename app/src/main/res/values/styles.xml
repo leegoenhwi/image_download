@@ -1,0 +1,61 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimaryDark">@color/colormain</item>
+        <!-- Customize your theme here. -->
+    </style>
+
+    <!-- Splash Theme-->
+    <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/background_splash</item>
+        <item name="colorPrimaryDark">@color/colormain</item>
+    </style>
+
+    <!-- "Main Theme-->
+    <style name="MainTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimaryDark">@color/colormain</item>
+    </style>
+
+    <!-- "Download Theme-->
+    <style name="DownloadTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimaryDark">@color/colormain</item>
+        <item name="colorPrimary">@color/colorwhite</item>
+        <item name="colorAccent">@color/colorwhite</item>
+    </style>
+
+    <!-- "DownloadControl Theme-->
+    <style name="DownloadControlTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimaryDark">@color/colormain</item>
+    </style>
+
+    <!-- AppBarLayout Theme-->
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" >
+        <item name="colorControlNormal">@color/colorblack</item>
+        <item name="colorControlHighlight">@color/colormain</item>
+
+    </style>
+
+    <!-- Toolbar Theme-->
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" >
+
+    </style>
+
+    <!-- Navigation Theme-->
+    <style name="NavigationTheme" parent="AppTheme">
+        <item name="android:textSize">16sp</item>
+        <item name="android:layout_marginTop">08dp</item>
+        <item name="android:layout_marginBottom">08dp</item>
+        <item name="colorPrimary">@color/colormain</item>
+    </style>
+
+    <!-- EditText Theme-->
+    <style name="EditTextTheme" parent="Widget.AppCompat.EditText">
+        <item name="colorControlNormal">@color/colorblack</item>
+        <item name="colorControlActivated">@color/colorblack</item>
+        <item name="android:textCursorDrawable">@color/colorblack</item>
+        <item name="android:textColor">@color/colorblack</item>
+        <item name="android:textColorHint">@color/colorblack</item>
+        <item name="android:textColorHighlight">@color/colorblack</item>
+    </style>
+</resources>

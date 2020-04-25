@@ -11,28 +11,27 @@
         android:src="@drawable/main_icon"
         android:layout_gravity="center"
         android:layout_marginLeft="20dp"
-        android:layout_marginBottom="95dp"
+        android:layout_marginBottom="150dp"
         tools:ignore="ContentDescription,RtlHardcoded" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginTop="70dp"
+        android:layout_marginTop="20dp"
         android:text="@string/main_text"
         android:textColor="@color/colorblack"
         android:textSize="20sp"/>
 
     <EditText
         android:id="@+id/text_input"
-        android:text="@string/ex_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:ems="13"
         android:textColor="@color/colorblack"
         android:textSize="16sp"
-        android:layout_marginTop="130dp"
+        android:layout_marginTop="60dp"
         android:layout_gravity="center"
         android:inputType="textUri"
         app:theme="@style/EditTextTheme"
@@ -46,9 +45,9 @@
         android:text="@string/download_button"
         android:gravity="center"
         android:textColor="@color/colorwhite"
-        android:layout_gravity="bottom|center"
+        android:layout_gravity="center"
         android:background="@drawable/url_download"
-        android:layout_marginBottom="100dp"
+        android:layout_marginTop="120dp"
         android:layout_marginEnd="85dp"/>
 
     <TextView
@@ -59,8 +58,8 @@
         android:text="@string/cilpboard_button"
         android:gravity="center"
         android:textColor="@color/colorwhite"
-        android:layout_gravity="bottom|center"
+        android:layout_gravity="center"
         android:background="@drawable/clip_board"
-        android:layout_marginBottom="100dp"
+        android:layout_marginTop="120dp"
         android:layout_marginStart="85dp"/>
 </FrameLayout>

@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity  {
 
     private DrawerLayout drawer;
     private Toolbar  toolbar;
-    private EditText text_input;
+
     private NavigationView navigationView;
 
     @Override
@@ -48,18 +48,10 @@ public class MainActivity extends AppCompatActivity  {
         init_UI();
     }
 
-    private void edit_text()
-    {
-        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
 
-        if (imm != null) {
-            imm.showSoftInput(text_input,0);
-        }
-    }
 
     private void init_UI()
     {
-        edit_text();
         toolbar_init();
         setmainfragment();
         select_navigation();
@@ -83,7 +75,6 @@ public class MainActivity extends AppCompatActivity  {
     private void find_id()
     {
         toolbar = findViewById(R.id.toolbar_main);
-        text_input = findViewById(R.id.text_input);
         drawer = findViewById(R.id.DrawerLayout);
         navigationView = findViewById(R.id.nav_view);
     }

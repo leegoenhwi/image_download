@@ -25,7 +25,7 @@
     </style>
 
     <!-- "DownloadControl Theme-->
-    <style name="DownloadControlTheme" parent="Theme.AppCompat.NoActionBar">
+    <style name="DownloadControlTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimaryDark">@color/colormain</item>
     </style>
 

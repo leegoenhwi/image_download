@@ -4,19 +4,30 @@ import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
 
 import com.personal_project.image_download.support.Crawling;
 
@@ -27,19 +38,24 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 @SuppressLint("Registered")
 public class Download extends AppCompatActivity implements View.OnClickListener{
 
     private ImageView dowmload_back_arrow;
     private String htmlpageURL = "";
-    private ArrayList<String> image_list;
+    private ArrayList<String> image_arrayList;
     private Thread thread;
     private Crawling crawling;
     private Crawling_Handler handler;
     private TextView one;
+    private NestedScrollView nestedScrollView;
 
     private WebView webView;
+    private WebSettings settings;
+    private ProgressBar progressBar;
+
 
     @SuppressLint("HandlerLeak")
     @Override
@@ -57,10 +73,12 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private void js_setting()
+    private void webview_setting()
     {
+
+
         // 자바스크립트인터페이스 연결
-        webView.getSettings().setJavaScriptEnabled(true);
+        settings.setJavaScriptEnabled(true);
         // 이걸 통해 자바스크립트 내에서 자바함수에 접근할 수 있음.
         webView.addJavascriptInterface(new MyJavascriptInterface(), "Android");
         // 페이지가 모두 로드되었을 때, 작업 정의
@@ -72,8 +90,52 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
                 // 자바스크립트 기본 메소드로 html 소스를 통째로 지정해서 인자로 넘김
                 view.loadUrl("javascript:window.Android.getHtml(document.getElementsByTagName('body')[0].innerHTML);");
             }
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                switch (errorCode) {
+                    case ERROR_AUTHENTICATION:
+                        break;           // 서버에서 사용자 인증 실패
+                    case ERROR_BAD_URL:
+                        break;                         // 잘못된 URL
+                    case ERROR_CONNECT:
+                        break;                        // 서버로 연결 실패
+                    case ERROR_FAILED_SSL_HANDSHAKE:
+                        break;  // SSL handshake 수행 실패
+                    case ERROR_FILE:
+                        break;                                // 일반 파일 오류
+                    case ERROR_FILE_NOT_FOUND:
+                        break;             // 파일을 찾을 수 없습니다
+                    case ERROR_HOST_LOOKUP:
+                        break;          // 서버 또는 프록시 호스트 이름 조회 실패
+                    case ERROR_IO:
+                        break;                             // 서버에서 읽거나 서버로 쓰기 실패
+                    case ERROR_PROXY_AUTHENTICATION:
+                        break;// 프록시에서 사용자 인증 실패
+                    case ERROR_REDIRECT_LOOP:
+                        break;              // 너무 많은 리디렉션
+                    case ERROR_TIMEOUT:
+                        break;                         // 연결 시간 초과
+                    case ERROR_TOO_MANY_REQUESTS:
+                        break;    // 페이지 로드중 너무 많은 요청 발생
+                    case ERROR_UNKNOWN:
+                        break;                        // 일반 오류
+                    case ERROR_UNSUPPORTED_AUTH_SCHEME:
+                        break;
+                        // 지원되지 않는 인증 체계
+                    case ERROR_UNSUPPORTED_SCHEME:
+                        break;
+                    default:
+                        break;
+                }
+
+            }
         });
+
     }
+
+
 
     private void getURL()
     {
@@ -85,11 +147,13 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
     private void find_id()
     {
         dowmload_back_arrow = findViewById(R.id.download_back_arrow);
-        one = findViewById(R.id.one);
+        one = new TextView(this);
+        nestedScrollView = findViewById(R.id.ned);
 
-
-        image_list = new ArrayList<String>();
+        progressBar = findViewById(R.id.circularProgressbar);
+        image_arrayList = new ArrayList<String>();
         webView = new WebView(this);
+        settings = webView.getSettings();
         handler = new Crawling_Handler();
         crawling = new Crawling();
     }
@@ -106,7 +170,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
         dowmload_back_arrow.setOnClickListener(this);
         thread_setting();
         getURL();
-        js_setting();
+        webview_setting();
     }
 
     @Override
@@ -114,6 +178,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
         switch (view.getId())
         {
             case R.id.download_back_arrow:
+                image_arrayList.clear();
                 finish();
                 break;
         }
@@ -127,6 +192,13 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
     }
 
+    @Override
+    protected void onPause() {
+
+        super.onPause();
+
+    }
+
 
     public class MyJavascriptInterface {
         @JavascriptInterface
@@ -135,26 +207,36 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
             System.out.println("실행 중");
 
-//            System.out.println("source");
-//            System.out.println(source);
-
             try {
                 Document doc = Jsoup.parse(html);
 
                 for (Element e : doc.select("img")) {
 
                     if (e.attr("src") != null) {
-                        image_list.add(e.attr("src"));
+                        image_arrayList.add(e.attr("src"));
                     }
 
                 }
             }catch (Exception e) {
+
+                Log.d("cheeeeck","js catch");
+
                 e.printStackTrace();
+                handler.sendEmptyMessage(1);
             }
 
-            handler.sendEmptyMessage(0);
+            Log.d("cheeeeck","imame_size" + image_arrayList.size());
+
+            if(!image_arrayList.isEmpty()) {
+                handler.sendEmptyMessage(0);
+            }
+            else {
+                handler.sendEmptyMessage(1);
+            }
+
         }
     }
+
 
 
     class Crawling implements Runnable{
@@ -173,7 +255,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
                 for (Element e : doc.select("img")) {
 
                     if( e.attr("src") != null){
-                        image_list.add(e.attr("src"));
+                        image_arrayList.add(e.attr("src"));
                     }
 
                 }
@@ -181,6 +263,9 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
 
             } catch (Exception e) {
+
+                Log.d("cheeeeck","thread catch");
+
                 e.printStackTrace();
             }
 
@@ -197,18 +282,63 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
             @SuppressLint("HandlerLeak")
             @Override
             public void handleMessage(@NonNull Message msg) {
+
+
                 if(msg.what == 0){   // Message id 가 0 이면
 
-                    for(int i =0;i< image_list.size();i++) {
-                        empty += image_list.get(i);
-                        System.out.println(image_list.get(i));
+                    empty = "";
+                    Log.d("cheeeeck","handle : 0");
+
+                    for(int i =0;i< image_arrayList.size();i++) {
+                        empty += image_arrayList.get(i);
+                        System.out.println(image_arrayList.get(i));
                     }
+
+                    dismiss_progress();
+
 
                     one.setText(empty);
 
+
+                }
+
+                if(msg.what == 1)
+                {
+                    Log.d("cheeeeck","handle : 1");
+
+                    dismiss_progress2();
+                    one.setText("error \n (잘못된 주소 또는 인터넷 열결확인)");
                 }
 
             }
+    }
+
+    private void dismiss_progress()
+    {
+        LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        one.setTextColor(Color.BLACK);
+        one.setGravity(Gravity.CENTER);
+        one.setLayoutParams(lparams);
+        progressBar.setVisibility(View.GONE);
+        nestedScrollView.removeAllViews();
+        nestedScrollView.addView(one);
+    }
+
+
+    private void dismiss_progress2()
+    {
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams
+                (FrameLayout.LayoutParams.MATCH_PARENT,FrameLayout.LayoutParams.MATCH_PARENT);
+
+        params.gravity = Gravity.CENTER;
+
+        one.setLayoutParams(params);
+        one.setTextColor(Color.BLACK);
+        one.setGravity(Gravity.CENTER);
+
+        progressBar.setVisibility(View.GONE);
+        nestedScrollView.removeAllViews();
+        nestedScrollView.addView(one);
     }
 
 

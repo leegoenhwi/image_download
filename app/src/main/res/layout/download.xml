@@ -38,17 +38,22 @@
 
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/ned"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        >
 
-
-    <TextView
-        android:id="@+id/one"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="loding.."
-        android:textColor="@color/colorblack"
-        android:layout_gravity="center"/>
+        <ProgressBar
+            style="@style/Widget.AppCompat.ProgressBar"
+            android:id="@+id/circularProgressbar"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            android:background="@color/colorwhite"
+            android:indeterminateTint="@color/colormain"
+            tools:ignore="UnusedAttribute" />
 
 </androidx.core.widget.NestedScrollView>
+
 </LinearLayout>

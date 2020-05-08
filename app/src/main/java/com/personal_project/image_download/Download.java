@@ -20,6 +20,7 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -30,6 +31,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.widget.NestedScrollView;
 
 import com.personal_project.image_download.support.Crawling;
+import com.personal_project.image_download.support.ListAdapter;
+import com.personal_project.image_download.support.list;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -45,16 +48,25 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
     private ImageView dowmload_back_arrow;
     private String htmlpageURL = "";
-    private ArrayList<String> image_arrayList;
+
     private Thread thread;
     private Crawling crawling;
     private Crawling_Handler handler;
     private TextView one;
-    private NestedScrollView nestedScrollView;
 
+    private FrameLayout nestedScrollView;
     private WebView webView;
     private WebSettings settings;
     private ProgressBar progressBar;
+
+    private boolean once = false;
+
+    private ListView listView;
+    private LinearLayout linearLayout;
+
+    private ListAdapter listAdapter;
+
+    private int js_count = 0;
 
 
     @SuppressLint("HandlerLeak")
@@ -66,7 +78,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
         initui();
 
         thread.start();
-        //지정한 URL을 웹 뷰로 접근하기
+//
         webView.loadUrl(htmlpageURL);
 
 
@@ -148,14 +160,18 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
     {
         dowmload_back_arrow = findViewById(R.id.download_back_arrow);
         one = new TextView(this);
+        listView = new ListView(this);
         nestedScrollView = findViewById(R.id.ned);
 
         progressBar = findViewById(R.id.circularProgressbar);
-        image_arrayList = new ArrayList<String>();
         webView = new WebView(this);
         settings = webView.getSettings();
         handler = new Crawling_Handler();
         crawling = new Crawling();
+
+        linearLayout = new LinearLayout(this);
+
+        listAdapter = new ListAdapter();
     }
 
     private void thread_setting()
@@ -171,6 +187,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
         thread_setting();
         getURL();
         webview_setting();
+        listview_setting();
     }
 
     @Override
@@ -178,7 +195,6 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
         switch (view.getId())
         {
             case R.id.download_back_arrow:
-                image_arrayList.clear();
                 finish();
                 break;
         }
@@ -205,7 +221,13 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
         public void getHtml(String html) {
             //위 자바스크립트가 호출되면 여기로 html이 반환됨
 
-            System.out.println("실행 중");
+            System.out.println("js 실행");
+
+            if(js_count >= 2 || once)
+            {
+                return;
+            }
+
 
             try {
                 Document doc = Jsoup.parse(html);
@@ -213,7 +235,8 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
                 for (Element e : doc.select("img")) {
 
                     if (e.attr("src") != null) {
-                        image_arrayList.add(e.attr("src"));
+//                        image_arrayList.add(e.attr("src"));
+                        listAdapter.addItem(e.attr("src"));
                     }
 
                 }
@@ -225,14 +248,12 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
                 handler.sendEmptyMessage(1);
             }
 
-            Log.d("cheeeeck","imame_size" + image_arrayList.size());
+            Log.d("cheeeeck","imame_size" + listAdapter.getCount());
 
-            if(!image_arrayList.isEmpty()) {
-                handler.sendEmptyMessage(0);
-            }
-            else {
-                handler.sendEmptyMessage(1);
-            }
+            js_count++;
+            handler.sendEmptyMessage(0);
+
+
 
         }
     }
@@ -255,7 +276,8 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
                 for (Element e : doc.select("img")) {
 
                     if( e.attr("src") != null){
-                        image_arrayList.add(e.attr("src"));
+//                        image_arrayList.add(e.attr("src"));
+                        listAdapter.addItem(e.attr("src"));
                     }
 
                 }
@@ -267,6 +289,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
                 Log.d("cheeeeck","thread catch");
 
                 e.printStackTrace();
+//                handler.sendEmptyMessage(1);
             }
 
             //handler.sendEmptyMessage(0);
@@ -277,28 +300,24 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
     @SuppressLint("HandlerLeak")
     class Crawling_Handler extends Handler{
-             String empty = "";
+//             String empty = "";
 
             @SuppressLint("HandlerLeak")
             @Override
             public void handleMessage(@NonNull Message msg) {
 
-
                 if(msg.what == 0){   // Message id 가 0 이면
 
-                    empty = "";
                     Log.d("cheeeeck","handle : 0");
 
-                    for(int i =0;i< image_arrayList.size();i++) {
-                        empty += image_arrayList.get(i);
-                        System.out.println(image_arrayList.get(i));
+                    if(listAdapter.getCount() == 0)
+                    {
+                        data_process2();
+                        one.setText("no image of please wait \n (이미지 소스가 없거나 잠시만 기다려주세요)");
                     }
-
-                    dismiss_progress();
-
-
-                    one.setText(empty);
-
+                    else{
+                        data_process();
+                    }
 
                 }
 
@@ -306,26 +325,39 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
                 {
                     Log.d("cheeeeck","handle : 1");
 
-                    dismiss_progress2();
+                    data_process2();
                     one.setText("error \n (잘못된 주소 또는 인터넷 열결확인)");
                 }
 
             }
     }
 
-    private void dismiss_progress()
+    private void data_process()
     {
-        LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
-        one.setTextColor(Color.BLACK);
-        one.setGravity(Gravity.CENTER);
-        one.setLayoutParams(lparams);
+
+
+
+        LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT);
+        lparams.gravity =Gravity.TOP;
+
         progressBar.setVisibility(View.GONE);
-        nestedScrollView.removeAllViews();
-        nestedScrollView.addView(one);
+
+        if(!once) {
+
+            listView.setLayoutParams(lparams);
+            linearLayout.setLayoutParams(lparams);
+            nestedScrollView.removeAllViews();
+            nestedScrollView.addView(linearLayout);
+            linearLayout.addView(listView);
+
+            listView.setAdapter(listAdapter);
+            once = true;
+        }
+
     }
 
 
-    private void dismiss_progress2()
+    private void data_process2()
     {
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams
                 (FrameLayout.LayoutParams.MATCH_PARENT,FrameLayout.LayoutParams.MATCH_PARENT);
@@ -341,5 +373,14 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
         nestedScrollView.addView(one);
     }
 
+    private void listview_setting()
+    {
+        listView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        listView.setFastScrollEnabled(true);
+        listView.setSmoothScrollbarEnabled(true);
+        listView.setFastScrollAlwaysVisible(true);
+
+        //        listView.setSelector();
+    }
 
 }

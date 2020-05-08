@@ -3,6 +3,8 @@ package com.personal_project.image_download.support;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +13,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CenterCrop;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
@@ -18,107 +23,84 @@ import com.bumptech.glide.request.RequestOptions;
 import com.personal_project.image_download.R;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
+//CustomAdapter.CustomViewHolder
+public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHolder> {
 
-public class ListAdapter  extends BaseAdapter {
+    private ArrayList<list> mList;
 
-    private ArrayList <list> arrayList = new ArrayList<list>();
-//    private Context context;
-//    private  ImageView download_icon;
+    public class CustomViewHolder extends RecyclerView.ViewHolder {
 
-    public ListAdapter() {
+        protected ImageView photo;
+        protected TextView name;
+        protected ImageView download_icon;
 
-    }
 
-    @Override
-    public int getCount() {
-        return arrayList.size();
-    }
-
-    @Override
-    public String getItem(int pos) {
-        return arrayList.get(pos).toString();
-    }
-
-    @Override
-    public long getItemId(int pos) {
-        return pos;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-
-        final int pos = position;
-        Context context = parent.getContext();
-
-        if (convertView == null) {
-            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.list, parent, false);
+        public CustomViewHolder(View view) {
+            super(view);
+            this.photo = (ImageView) view.findViewById(R.id.photo);
+            this.name = (TextView) view.findViewById(R.id.name);
+            this.download_icon = (ImageView) view.findViewById(R.id.download_icon);
         }
+    }
 
 
-        list profile = (list)arrayList.get(pos);
+    public ListAdapter(ArrayList<list> list) {
+        this.mList = list;
+    }
 
-        ImageView photo = (ImageView)convertView.findViewById(R.id.photo);
-        TextView name = (TextView)convertView.findViewById(R.id.name);
-        ImageView download_icon = (ImageView)convertView.findViewById(R.id.download_icon);
 
-        download_icon.setTag(pos); // 포지션 태그 셋
 
-        Glide.with(context).load(profile.getName()).override(200, 200).error(R.drawable.ic_do_not_disturb_alt_black_24dp).into(photo);
+    @Override
+    public CustomViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
 
-        name.setText(profile.getName());
+        View view = LayoutInflater.from(viewGroup.getContext())
+                .inflate(R.layout.list, viewGroup, false);
 
-        if(photo.getImageAlpha() == R.drawable.ic_do_not_disturb_alt_black_24dp)
+        CustomViewHolder viewHolder = new CustomViewHolder(view);
+
+        return viewHolder;
+    }
+
+
+
+
+    @Override
+    public void onBindViewHolder(@NonNull CustomViewHolder viewholder, int position) {
+
+        viewholder.download_icon.setTag(position); // 포지션 태그 셋
+
+        Glide.with(viewholder.itemView.getContext()).load(mList.get(position).getName()).override(200, 200).error(R.drawable.ic_do_not_disturb_alt_black_24dp).into(viewholder.photo);
+
+        viewholder.name.setText(mList.get(position).getName());
+
+        if(viewholder.photo.getImageAlpha() == R.drawable.ic_do_not_disturb_alt_black_24dp)
         {
-            name.setText("x");
+            viewholder.name.setText("x");
         }
 
-
-
-        download_icon.setOnClickListener(new ImageView.OnClickListener(){
+        viewholder.download_icon.setOnClickListener(new ImageView.OnClickListener(){
             @Override
             public void onClick(View view) {
                 Log.d("aaaaaaaaa",view.getTag().toString());
             }
         });
-
-
-//        if ( profile.getName().endsWith(".gif")) {
-//            try {
-//                Glide.with(_inflater.getContext())
-//                        .asGif()
-//                        .load(profile.getName())
-//                        .apply(new RequestOptions().transforms(new CenterCrop(), new RoundedCorners(10)))
-//                        .into(photo);
-//            } catch (Exception ignored) {
-//            }
-//        } else {
-//            try {
-//                Glide.with(_inflater.getContext())
-//                        .asBitmap()
-//                        .apply(new RequestOptions().transforms(new CenterCrop(), new RoundedCorners(10)))
-//                        .load(profile.getName())
-//                        .into(photo);
-//            } catch (Exception ignored) {
-//            }
-//        }
-
-
-
-
-        return convertView;
     }
 
-    // 아이템 데이터 추가를 위한 함수. 개발자가 원하는대로 작성 가능.
+    @Override
+    public int getItemCount() {
+        return (null != mList ? mList.size() : 0);
+    }
+
     public void addItem(String title) {
+        // 외부에서 item을 추가시킬 함수입니다.
 
         list item = new list();
 
         item.setName(title);
 
+        mList.add(item);
 
-        arrayList.add(item);
-    }
-
-
+        notifyDataSetChanged();
+    };
 }

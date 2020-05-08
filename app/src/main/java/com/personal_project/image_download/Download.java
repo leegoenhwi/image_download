@@ -29,6 +29,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.widget.NestedScrollView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.personal_project.image_download.support.Crawling;
 import com.personal_project.image_download.support.ListAdapter;
@@ -61,10 +63,13 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
     private boolean once = false;
 
-    private ListView listView;
+    private RecyclerView recyclerView;
     private LinearLayout linearLayout;
 
     private ListAdapter listAdapter;
+
+    private ArrayList<list> mArrayList;
+    private RecyclerView.LayoutManager mLayoutManager;
 
     private int js_count = 0;
 
@@ -160,7 +165,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
     {
         dowmload_back_arrow = findViewById(R.id.download_back_arrow);
         one = new TextView(this);
-        listView = new ListView(this);
+        recyclerView = new RecyclerView(this);
         nestedScrollView = findViewById(R.id.ned);
 
         progressBar = findViewById(R.id.circularProgressbar);
@@ -171,7 +176,8 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
         linearLayout = new LinearLayout(this);
 
-        listAdapter = new ListAdapter();
+        mArrayList = new ArrayList<list>();
+        listAdapter = new ListAdapter(mArrayList);
     }
 
     private void thread_setting()
@@ -248,7 +254,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
                 handler.sendEmptyMessage(1);
             }
 
-            Log.d("cheeeeck","imame_size" + listAdapter.getCount());
+            Log.d("cheeeeck","imame_size" + listAdapter.getItemCount());
 
             js_count++;
             handler.sendEmptyMessage(0);
@@ -310,7 +316,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
                     Log.d("cheeeeck","handle : 0");
 
-                    if(listAdapter.getCount() == 0)
+                    if(listAdapter.getItemCount() == 0)
                     {
                         data_process2();
                         one.setText("no image of please wait \n (이미지 소스가 없거나 잠시만 기다려주세요)");
@@ -344,13 +350,13 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
         if(!once) {
 
-            listView.setLayoutParams(lparams);
+            recyclerView.setLayoutParams(lparams);
             linearLayout.setLayoutParams(lparams);
             nestedScrollView.removeAllViews();
             nestedScrollView.addView(linearLayout);
-            linearLayout.addView(listView);
+            linearLayout.addView(recyclerView);
 
-            listView.setAdapter(listAdapter);
+            recyclerView.setAdapter(listAdapter);
             once = true;
         }
 
@@ -375,10 +381,12 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
     private void listview_setting()
     {
-        listView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
-        listView.setFastScrollEnabled(true);
-        listView.setSmoothScrollbarEnabled(true);
-        listView.setFastScrollAlwaysVisible(true);
+        recyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        mLayoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(mLayoutManager);
+//        listView.setFastScrollEnabled(true);
+//        listView.setSmoothScrollbarEnabled(true);
+//        listView.setFastScrollAlwaysVisible(true);
 
         //        listView.setSelector();
     }

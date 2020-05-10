@@ -23,4 +23,7 @@
 
     <!-- download text-->
     <string name="download">download</string>
+
+    <!-- download control text-->
+    <string name="download_control2">download control</string>
 </resources>

@@ -1,5 +1,7 @@
 package com.personal_project.image_download;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -67,8 +69,23 @@ public class MainFragment extends Fragment implements View.OnClickListener{
 
                 break;
             case R.id.clipboard_button:
-
+                clipboard_paste();
                 break;
+        }
+    }
+
+    private void clipboard_paste()
+    {
+
+        ClipboardManager clipboardManager = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (!(clipboardManager.hasPrimaryClip()))
+        {
+            Toast.makeText(getContext(),"no copy data", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            ClipData.Item item = clipboardManager.getPrimaryClip().getItemAt(0);;
+
+            text_input.setText( item.getText().toString());
         }
     }
 }

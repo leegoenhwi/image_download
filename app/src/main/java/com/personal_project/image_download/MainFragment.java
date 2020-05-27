@@ -1,10 +1,14 @@
 package com.personal_project.image_download;
 
+import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +17,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import static androidx.core.content.ContextCompat.getSystemService;
@@ -23,6 +30,7 @@ public class MainFragment extends Fragment implements View.OnClickListener{
     private TextView clipboard_button;
     private View view;
     private EditText text_input;
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -46,6 +54,7 @@ public class MainFragment extends Fragment implements View.OnClickListener{
         download_button.setOnClickListener(this);
         clipboard_button.setOnClickListener(this);
         edit_text();
+        grantExternalStoragePermission();
     }
 
     private void edit_text()
@@ -86,6 +95,38 @@ public class MainFragment extends Fragment implements View.OnClickListener{
             ClipData.Item item = clipboardManager.getPrimaryClip().getItemAt(0);;
 
             text_input.setText( item.getText().toString());
+        }
+    }
+
+    private boolean grantExternalStoragePermission() {
+        if (Build.VERSION.SDK_INT >= 23) {
+
+            if (ContextCompat.checkSelfPermission(getContext(),Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                Log.d("TAG", "Permission is granted");
+                return true;
+            }
+            else{
+                Log.d("TAG","Permission is revoked");
+                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+
+                return false;
+            }
+        }else{
+            Toast.makeText(getContext(), "External Storage Permission is Grant", Toast.LENGTH_SHORT).show();
+            Log.d("TAG", "External Storage Permission is Grant ");
+            return true;
+        }
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (Build.VERSION.SDK_INT >= 23) {
+            if(grantResults[0]== PackageManager.PERMISSION_GRANTED){
+                Log.d("TAG","Permission: "+permissions[0]+ "was "+grantResults[0]);
+                //resume tasks needing this permission
+            }
         }
     }
 }

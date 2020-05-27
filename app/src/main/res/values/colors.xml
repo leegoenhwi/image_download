@@ -16,4 +16,8 @@
 
     <!-- button color -->
     <color name="colorcilipboard">#4A566E</color>
+
+    <!-- progress bar color-->
+    <color name="colorprogress">#00B594</color>
+    <color name="colorprogressbackground">#757575</color>
 </resources>

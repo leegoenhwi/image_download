@@ -177,7 +177,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
         linearLayout = new LinearLayout(this);
 
         mArrayList = new ArrayList<list>();
-        listAdapter = new ListAdapter(mArrayList);
+        listAdapter = new ListAdapter(this,mArrayList);
     }
 
     private void thread_setting()
@@ -252,6 +252,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener{
 
                 e.printStackTrace();
                 handler.sendEmptyMessage(1);
+                return;
             }
 
             Log.d("cheeeeck","imame_size" + listAdapter.getItemCount());

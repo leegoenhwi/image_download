@@ -21,19 +21,42 @@
             android:scaleType="centerInside"
             tools:ignore="RtlHardcoded" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:id="@+id/name"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:text="aaaaaaaa"
-            android:textColor="@color/colorblack"
-            android:textSize="15sp" />
+            android:orientation="vertical"
+            android:id="@+id/text_and_progress">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:id="@+id/name"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="aaaaaaaa"
+                android:textColor="@color/colorblack"
+                android:textSize="15sp"/>
+
+            <ProgressBar
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:id="@+id/progress"
+                android:layout_marginTop="6dp"
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:max="100"
+                android:background="@drawable/progressbar_progressbar"
+                android:progressTint="@color/colorprogress"
+                android:progressBackgroundTint="@color/colorprogressbackground"
+                tools:ignore="UnusedAttribute" />
+
+        </LinearLayout>
+
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:id="@+id/download_icon"
             android:layout_marginLeft="50dp"
             android:src="@drawable/download"

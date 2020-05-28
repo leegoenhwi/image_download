@@ -28,7 +28,7 @@ import android.widget.Toast;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
-import com.personal_project.image_download.support.Color;
+
 
 import java.util.Objects;
 

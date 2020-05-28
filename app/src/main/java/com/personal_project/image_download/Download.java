@@ -32,7 +32,7 @@ import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.personal_project.image_download.support.Crawling;
+
 import com.personal_project.image_download.support.ListAdapter;
 import com.personal_project.image_download.support.list;
 

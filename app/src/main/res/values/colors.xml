@@ -20,4 +20,7 @@
     <!-- progress bar color-->
     <color name="colorprogress">#00B594</color>
     <color name="colorprogressbackground">#757575</color>
+
+    <!--    -->
+    <color name="colorerror">#ffc0cb</color>
 </resources>

@@ -59,8 +59,10 @@
             android:layout_height="28dp"
             android:id="@+id/download_icon"
             android:layout_marginLeft="50dp"
-            android:src="@drawable/download"
+
             tools:ignore="RtlHardcoded" />
+
+
     </LinearLayout>
 
     <TextView

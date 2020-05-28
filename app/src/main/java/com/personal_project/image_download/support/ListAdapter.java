@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -27,6 +29,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -55,7 +58,7 @@ import java.util.Dictionary;
 import java.util.Locale;
 
 //CustomAdapter.CustomViewHolder
-public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHolder> {
+public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHolder>  {
 
     private ArrayList<list> mList;
     private imagedownload_Handler imagedownload_handler;
@@ -66,12 +69,14 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
 
 
 
-    public class CustomViewHolder extends RecyclerView.ViewHolder {
+    public class CustomViewHolder extends RecyclerView.ViewHolder{
 
         protected ImageView photo;
         protected TextView name;
         protected ImageView download_icon;
         protected ProgressBar progressBar;
+
+        private Drawable mDrawable;
 
 
         public CustomViewHolder(View view) {
@@ -80,7 +85,15 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
             this.name = (TextView) view.findViewById(R.id.name);
             this.download_icon = (ImageView) view.findViewById(R.id.download_icon);
             this.progressBar = view.findViewById(R.id.progress);
+
+            imagedownload_handler = new imagedownload_Handler();
+
+            imagedownload = new imagedownload();
+
+
         }
+
+
     }
 
 
@@ -91,18 +104,16 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
 
 
 
+    @NonNull
     @Override
     public CustomViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
+
+        Log.d("bbbbbbbbbbbbbbbbbb","onCreateViewHolder");
 
         View view = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.list, viewGroup, false);
 
         CustomViewHolder viewHolder = new CustomViewHolder(view);
-
-        imagedownload_handler = new imagedownload_Handler();
-
-        imagedownload = new imagedownload();
-
 
         return viewHolder;
     }
@@ -112,33 +123,65 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
 
     @SuppressLint("ResourceType")
     @Override
-    public void onBindViewHolder(@NonNull final CustomViewHolder viewholder, int position) {
+    public void onBindViewHolder(@NonNull final CustomViewHolder viewholder, final int position) {
 
-        viewholder.download_icon.setTag(position); // 포지션 태그 셋
+        Log.d("bbbbbbbbbbbbbbbbbb", "onBindViewHolder");
 
-        Glide.with(viewholder.itemView.getContext()).load(mList.get(position).getName()).override(200, 200).error(R.drawable.ic_do_not_disturb_alt_black_24dp).into(viewholder.photo);
+
+        Glide.with(context).load(mList.get(position).getName()).override(200, 200).error(R.drawable.ic_do_not_disturb_alt_black_24dp).into(viewholder.photo);
 
         viewholder.name.setText(mList.get(position).getName());
 
+        final Drawable mDrawable = context.getResources().getDrawable(R.drawable.download);
+        mDrawable.setColorFilter(ContextCompat.getColor(context, R.color.colorcilipboard), PorterDuff.Mode.MULTIPLY);
+
+
+        if(!mList.get(position).getclicked())
+        {
+
+            viewholder.download_icon.setImageDrawable(mDrawable);
+
+            viewholder.download_icon.setClickable(true);
+
+            viewholder.progressBar.setVisibility(View.GONE);
+
+        }
+
+        else{
+
+
+            Drawable dDrawable = context.getResources().getDrawable(R.drawable.check);
+            dDrawable.setColorFilter(ContextCompat.getColor(context, R.color.colormain), PorterDuff.Mode.MULTIPLY);
+
+            viewholder.download_icon.setImageDrawable(dDrawable);
+
+            viewholder.progressBar.setProgress(100);
+        }
 
         viewholder.download_icon.setOnClickListener(new ImageView.OnClickListener(){
+
             @Override
-            public void onClick(View view) {
+            public void onClick(View v) {
+
+                if(viewholder.download_icon.getDrawable() == mDrawable)
+                {
 
 
-                Log.d("aaaaaaaaa",view.getTag().toString());
+                        // TODO : use pos.
+                        mList.get(position).setclicked(true);
+                        System.out.println("아이템 포지션 : " + position);
 
-                int num = (int) view.getTag();
+                        Thread thread = new Thread(imagedownload);
+                        thread.setDaemon(true);
+                        imagedownload.setposition(position,viewholder.download_icon,viewholder.progressBar);
+                        imagedownload.seturl(mList.get(position));
 
-                Thread thread = new Thread(imagedownload);
-                thread.setDaemon(true);
-                imagedownload.setviewholder(viewholder);
-                imagedownload.seturl(mList.get(num));
+                        thread.start();
 
-                thread.start();
-
+                }
             }
         });
+
     }
 
     @Override
@@ -150,6 +193,7 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
         // 외부에서 item을 추가시킬 함수입니다.
 
         list item = new list();
+
 
         item.setName(title);
 
@@ -169,13 +213,9 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
 
         String savePath =  Environment.getExternalStoragePublicDirectory( Environment.DIRECTORY_PICTURES ) + "/image_download";
 
-        CustomViewHolder Runnable_viewholder;
-
-
-        public void setviewholder(CustomViewHolder viewholder)
+        public void setposition(int pos,ImageView imageView,ProgressBar progressBar)
         {
-            this.Runnable_viewholder = viewholder;
-            imagedownload_handler.setProgress(viewholder.progressBar);
+           imagedownload_handler.set(pos,imageView,progressBar);
         }
 
 
@@ -208,7 +248,8 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA);
             fileName = String.valueOf(sdf.format(day));
 
-            String localPath = savePath +"/"+ fileName + ".jpg";
+
+            String localPath = savePath +"/"+ fileName + "."+  fileNameWithoutExtn(fileUrl);
 
             Log.d("Runnable","localpath : "+ localPath);
 
@@ -276,13 +317,20 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
     @SuppressLint("HandlerLeak")
     class imagedownload_Handler extends Handler {
 
-        private ProgressBar progressBar2;
 
-        public void setProgress(ProgressBar progressBar3)
+        private int pos;
+
+        private ImageView imageView;
+
+        private ProgressBar progressBar;
+
+        public void set(int pos,ImageView imageView,ProgressBar progressBar)
         {
-            this.progressBar2 = progressBar3;
-
+            this.pos = pos;
+            this.imageView = imageView;
+            this.progressBar = progressBar;
         }
+
 
         @RequiresApi(api = Build.VERSION_CODES.N)
         @SuppressLint("HandlerLeak")
@@ -303,24 +351,29 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
 
             if(msg.what == 2)
             {
-                progressBar2.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
             }
 
             else if(msg.what == 3)
             {
                 for(int i = 0;i<=50;i++) {
-                    progressBar2.setProgress(i);
+                    progressBar.setProgress(i);
                 }
             }
 
             else if(msg.what == 4)
             {
                 for(int i = 50;i<=100;i++) {
-                    progressBar2.setProgress(i);
+                    progressBar.setProgress(i);
                 }
 
                 Toast myToast = Toast.makeText(context, "download complete!!!", Toast.LENGTH_SHORT);
                 myToast.show();
+
+                final Drawable dDrawable = context.getResources().getDrawable(R.drawable.check);
+                dDrawable.setColorFilter(ContextCompat.getColor(context, R.color.colormain), PorterDuff.Mode.MULTIPLY);
+
+                imageView.setImageDrawable(dDrawable);
 
             }
 
@@ -328,6 +381,49 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
     }
 
 
+    private String fileNameWithoutExtn(String url)
+    {
+        if(url.contains(".jpg"))
+        {
+            return "jpg";
+        }
+        else if(url.contains(".gif"))
+        {
+            return "gif";
+        }
+        else if(url.contains(".BMP"))
+        {
+            return "BMP";
+        }
+        else if(url.contains(".RLE"))
+        {
+            return "RLE";
+        }
+        else if(url.contains(".DIB"))
+        {
+            return "DIB";
+        }
+        else if(url.contains(".png"))
+        {
+            return "png";
+        }
+        else if(url.contains(".TIF"))
+        {
+            return "TIF";
+        }
+        else if(url.contains(".TIFF"))
+        {
+            return "TIFF";
+        }
+        else if(url.contains(".raw"))
+        {
+            return "raw";
+        }
+        else
+        {
+            return "jpg";
+        }
+    }
 
 
 }

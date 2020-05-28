@@ -7,8 +7,9 @@
 
     <!-- nav item -->
     <string name="download_control">Download Control</string>
-    <string name="tutorial">Tutorial</string>
+    <string name="tutorial">Help</string>
     <string name="setting">Setting</string>
+    <string name="mail">Mail</string>
     <string name="info">Info</string>
 
     <!-- main text -->

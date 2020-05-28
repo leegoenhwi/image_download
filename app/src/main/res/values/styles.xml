@@ -24,11 +24,6 @@
         <item name="colorAccent">@color/colorwhite</item>
     </style>
 
-    <!-- "DownloadControl Theme-->
-    <style name="DownloadControlTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorPrimaryDark">@color/colormain</item>
-    </style>
-
     <!-- AppBarLayout Theme-->
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" >
         <item name="colorControlNormal">@color/colorblack</item>

@@ -1,23 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group>
-        <item android:id="@+id/download_control"
-            android:icon="@drawable/download_control"
-            android:title="@string/download_control" />
-        <item android:id="@+id/tutorial"
-            android:icon="@drawable/tutorial"
-            android:title="@string/tutorial" />
-
-    </group>
-
     <group android:id="@+id/group_menu">
+        <item android:id="@+id/tutorial"
+            android:icon="@drawable/help"
+            android:title="@string/tutorial" />
         <item android:id="@+id/setting"
             android:icon="@drawable/setting"
             android:title="@string/setting" />
         <item android:id="@+id/info"
             android:icon="@drawable/info"
             android:title="@string/info" />
+    </group>
+
+    <group android:id="@+id/group_menu2">
+        <item android:id="@+id/mail"
+            android:icon="@drawable/mail"
+            android:title="@string/mail" />
     </group>
 
 

@@ -46,10 +46,6 @@
             android:theme="@style/DownloadTheme">
         </activity>
 
-        <activity
-            android:name=".DownloadControl"
-            android:theme="@style/DownloadControlTheme">
-        </activity>
 
     </application>
 

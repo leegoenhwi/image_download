@@ -139,11 +139,21 @@ public class ListAdapter  extends RecyclerView.Adapter<ListAdapter.CustomViewHol
         if(!mList.get(position).getclicked())
         {
 
-            viewholder.download_icon.setImageDrawable(mDrawable);
+            if(viewholder.name.getText() == "")
+            {
+                Drawable xDrawable = context.getResources().getDrawable(R.drawable.ic_do_not_disturb_alt_black_24dp);
+                viewholder.name.setText("error image");
 
-            viewholder.download_icon.setClickable(true);
+                viewholder.download_icon.setImageDrawable(xDrawable);
+            }
 
-            viewholder.progressBar.setVisibility(View.GONE);
+            else {
+                viewholder.download_icon.setImageDrawable(mDrawable);
+
+                viewholder.download_icon.setClickable(true);
+
+                viewholder.progressBar.setVisibility(View.GONE);
+            }
 
         }
 

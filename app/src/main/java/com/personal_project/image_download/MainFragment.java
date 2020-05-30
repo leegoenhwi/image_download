@@ -55,6 +55,7 @@ public class MainFragment extends Fragment implements View.OnClickListener{
         clipboard_button.setOnClickListener(this);
         edit_text();
         grantExternalStoragePermission();
+        text_input.requestFocus();
     }
 
     private void edit_text()

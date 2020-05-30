@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="300dp"
+
+    android:background="#ffffff"
+    android:layout_height="wrap_content"
+
+    android:orientation="vertical">
+
+
+
+    <TextView
+
+        android:layout_width="match_parent"
+
+        android:layout_height="wrap_content"
+
+        android:background="#ffffff"
+
+        android:gravity="center"
+
+        android:text="@string/tutorial"
+
+        android:textColor="@color/colorcilipboard"
+
+        android:layout_marginTop="15sp"
+        android:textSize="16sp"
+
+        android:textStyle="bold" />
+
+
+
+    <TextView
+
+        android:layout_width="match_parent"
+
+        android:layout_height="wrap_content"
+
+        android:layout_marginBottom="40dp"
+
+        android:layout_marginTop="40dp"
+
+        android:textColor="@color/colorblack"
+
+        android:gravity="center"
+        android:layout_gravity="center"
+
+        android:text="@string/contents"
+
+        android:textSize="16sp" />
+
+
+
+    <LinearLayout
+
+        android:layout_width="match_parent"
+
+        android:layout_height="wrap_content"
+
+        android:gravity="center"
+
+        android:orientation="horizontal">
+
+
+
+
+        <TextView
+
+            android:id="@+id/btn_ok"
+
+            android:layout_width="wrap_content"
+
+            android:layout_height="40dp"
+
+            android:layout_weight="1"
+
+            android:background="@drawable/ok_button"
+
+            android:clickable="true"
+
+            android:gravity="center"
+
+            android:text="ok"
+
+            android:textColor="#ffffff"
+
+            android:textSize="16sp"
+
+            android:textStyle="bold"
+            tools:ignore="HardcodedText,InefficientWeight,KeyboardInaccessibleWidget" />
+
+    </LinearLayout>
+
+</LinearLayout>

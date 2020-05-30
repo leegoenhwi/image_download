@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">image_download</string>
+    <string name="app_name">image\ndownload</string>
 
     <!-- nav commend -->
     <string name="navigation_drawer_open">Drawer Open</string>
@@ -11,20 +11,24 @@
     <string name="setting">Setting</string>
     <string name="mail">Mail</string>
     <string name="info">Info</string>
+    <string name="subtitle">Question</string>
 
     <!-- main text -->
-    <string name="main_text">URL</string>
+    <string name="main_text">URL INPUT</string>
 
     <!-- button text -->
     <string name="download_button">download</string>
     <string name="cilpboard_button">clipboard</string>
 
-    <!-- edit text-->
+    <!-- edit text -->
     <string name="ex_text">url_input</string>
 
-    <!-- download text-->
+    <!-- download text -->
     <string name="download">download</string>
 
-    <!-- download control text-->
-    <string name="download_control2">download control</string>
+    <!-- nav email -->
+    <string name="email">10131751z@gmail.com</string>
+
+    <!-- help -->
+    <string name="contents">enter url and download button push \n\n next you can image download</string>
 </resources>

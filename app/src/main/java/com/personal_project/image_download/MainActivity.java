@@ -12,9 +12,12 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentManager;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +31,7 @@ import android.widget.Toast;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
+import com.personal_project.image_download.support.CustomDialog;
 
 
 import java.util.Objects;
@@ -36,7 +40,7 @@ public class MainActivity extends AppCompatActivity  {
 
     private DrawerLayout drawer;
     private Toolbar  toolbar;
-
+    private CustomDialog mEndDialog;
     private NavigationView navigationView;
 
     @Override
@@ -87,7 +91,44 @@ public class MainActivity extends AppCompatActivity  {
                     @Override
                     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
 
-                        drawer.closeDrawers();
+                        switch (menuItem.getItemId()){
+                            case R.id.tutorial:
+                                mEndDialog = new CustomDialog(MainActivity.this);
+                                mEndDialog.setCancelable(false);
+                                drawer.closeDrawers();
+                                mEndDialog.show();
+                                break;
+                            case R.id.setting:
+                                Intent setting_intent = new Intent(getBaseContext(),setting.class);
+                                startActivity(setting_intent);
+                                break;
+                            case R.id.info:
+                                Intent info_intent = new Intent(getBaseContext(),info.class);
+                                startActivity(info_intent);
+                                break;
+                            case R.id.mail:
+//                                Intent email = new Intent(Intent.ACTION_SENDTO);
+//                                email.setData(Uri.parse("mailto:"));
+//                                email.putExtra(Intent.EXTRA_EMAIL, getString(R.string.email));
+//                                email.putExtra(Intent.EXTRA_SUBJECT, "<" + getString(R.string.app_name) +"_Questions"+ ">");
+//
+//                                startActivity(email);
+
+                                String[] TO = { getString(R.string.email)};
+                                Uri uri = Uri.parse("mailto:10131751z@gmail.com")
+                                        .buildUpon()
+                                        .build();
+                                Intent emailIntent = new Intent(Intent.ACTION_SENDTO, uri);
+                                emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
+                                emailIntent.putExtra(Intent.EXTRA_SUBJECT, "<" + "image download" +"_Questions"+ ">");
+                                startActivity(Intent.createChooser(emailIntent, "Send mail..."));
+                                break;
+
+                        }
+
+                        if(drawer.isEnabled()) {
+                            drawer.closeDrawers();
+                        }
                         return true;
                     }
                 }

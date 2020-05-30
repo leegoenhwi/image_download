@@ -53,4 +53,18 @@
         <item name="android:textColorHint">@color/colorblack</item>
         <item name="android:textColorHighlight">@color/colorblack</item>
     </style>
+
+    <!-- settingTheme-->
+    <style name="settingTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimaryDark">@color/colormain</item>
+        <item name="colorPrimary">@color/colorwhite</item>
+        <item name="colorAccent">@color/colorwhite</item>
+    </style>
+
+    <!-- infoTheme-->
+    <style name="infoTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimaryDark">@color/colormain</item>
+        <item name="colorPrimary">@color/colorwhite</item>
+        <item name="colorAccent">@color/colorwhite</item>
+    </style>
 </resources>

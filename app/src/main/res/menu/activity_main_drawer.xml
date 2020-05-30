@@ -14,9 +14,15 @@
     </group>
 
     <group android:id="@+id/group_menu2">
-        <item android:id="@+id/mail"
-            android:icon="@drawable/mail"
-            android:title="@string/mail" />
+        <item android:id="@+id/some_item_id"
+            android:title="@string/subtitle">
+            <menu>
+                <item
+                    android:id="@+id/mail"
+                    android:icon="@drawable/mail"
+                    android:title="@string/mail" />
+            </menu>
+        </item>
     </group>
 
 

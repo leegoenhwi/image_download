@@ -9,9 +9,11 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+
+
 
     <application
+        android:largeHeap="true"
         android:hardwareAccelerated="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher_2_foreground"
@@ -23,6 +25,10 @@
         tools:ignore="UnusedAttribute"
         android:networkSecurityConfig="@xml/network_security_config"
         android:requestLegacyExternalStorage="true">
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/admob_app_id"/>
 
         <activity
             android:name=".Splash"
@@ -45,11 +51,6 @@
         <activity
             android:name=".Download"
             android:theme="@style/DownloadTheme">
-        </activity>
-
-        <activity
-            android:name=".setting"
-            android:theme="@style/settingTheme">
         </activity>
 
         <activity

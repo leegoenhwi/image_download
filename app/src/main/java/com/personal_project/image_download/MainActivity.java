@@ -19,6 +19,9 @@ import android.graphics.drawable.AnimatedVectorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -98,9 +101,15 @@ public class MainActivity extends AppCompatActivity  {
                                 drawer.closeDrawers();
                                 mEndDialog.show();
                                 break;
-                            case R.id.setting:
-                                Intent setting_intent = new Intent(getBaseContext(),setting.class);
-                                startActivity(setting_intent);
+                            case R.id.dowmload_path:
+
+                                Uri targetUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                                String targetDir = Environment.getExternalStoragePublicDirectory( Environment.DIRECTORY_PICTURES ) + "/image_download";;
+                                targetUri = targetUri.buildUpon().appendQueryParameter("bucketId",String.valueOf(targetDir.toLowerCase().hashCode())).build();
+                                Intent intent = new Intent(Intent.ACTION_VIEW, targetUri);
+                                startActivity(intent);
+
+
                                 break;
                             case R.id.info:
                                 Intent info_intent = new Intent(getBaseContext(),info.class);

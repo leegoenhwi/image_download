@@ -49,4 +49,6 @@ dependencies {
     //noinspection GradleCompatible,GradleCompatible,GradleDependency
     implementation 'com.android.support:recyclerview-v7:27.0.2'
 
+    implementation 'com.google.android.gms:play-services-ads:19.1.0'
+
 }

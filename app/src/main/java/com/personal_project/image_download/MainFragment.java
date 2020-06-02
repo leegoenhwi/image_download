@@ -22,6 +22,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.initialization.InitializationStatus;
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
+
 import static androidx.core.content.ContextCompat.getSystemService;
 
 public class MainFragment extends Fragment implements View.OnClickListener{
@@ -30,7 +37,7 @@ public class MainFragment extends Fragment implements View.OnClickListener{
     private TextView clipboard_button;
     private View view;
     private EditText text_input;
-
+    private AdView mAdView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -38,6 +45,7 @@ public class MainFragment extends Fragment implements View.OnClickListener{
         view = inflater.inflate(R.layout.main_fragment, container, false);
 
         find_id();
+        iniadmob();
         initui();
         return view;
     }
@@ -47,6 +55,54 @@ public class MainFragment extends Fragment implements View.OnClickListener{
         download_button = view.findViewById(R.id.download_button);
         clipboard_button = view.findViewById(R.id.clipboard_button);
         text_input = view.findViewById(R.id.text_input);
+    }
+
+    private void iniadmob()
+    {
+        MobileAds.initialize(getContext(), new OnInitializationCompleteListener() {
+            @Override
+            public void onInitializationComplete(InitializationStatus initializationStatus) {
+            }
+        });
+        mAdView = view.findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+
+
+
+        // 광고가 제대로 로드 되는지 테스트 하기 위한 코드입니다.
+        mAdView.setAdListener(new AdListener() {
+            @Override
+            public void onAdLoaded() {
+                // Code to be executed when an ad finishes loading.
+                // 광고가 문제 없이 로드시 출력됩니다.
+                Log.d("@@@", "onAdLoaded");
+            }
+            @Override
+            public void onAdFailedToLoad(int errorCode) {
+                // Code to be executed when an ad request fails.
+                // 광고 로드에 문제가 있을시 출력됩니다.
+                Log.d("@@@", "onAdFailedToLoad " + errorCode);
+            }
+            @Override
+            public void onAdOpened() {
+                // Code to be executed when an ad opens an overlay that
+                // covers the screen.
+            }
+            @Override
+            public void onAdClicked() {
+                // Code to be executed when the user clicks on an ad.
+            }
+            @Override
+            public void onAdLeftApplication() {
+                // Code to be executed when the user has left the app.
+            }
+            @Override
+            public void onAdClosed() {
+                // Code to be executed when the user is about to return
+                // to the app after tapping on an ad.
+            }
+        });
     }
 
     private void initui()

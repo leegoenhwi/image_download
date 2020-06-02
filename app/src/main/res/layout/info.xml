@@ -36,4 +36,114 @@
     </FrameLayout>
 
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:ignore="UselessLeaf">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="app version"
+            android:textColor="@color/colorblack"
+            android:layout_gravity="center|top"
+            android:layout_marginTop="10dp"
+            android:layout_marginRight="100dp"
+            android:textSize="18sp"
+            tools:ignore="RtlHardcoded" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="v1.0"
+            android:textColor="@color/colortext"
+            android:layout_gravity="center|top"
+            android:layout_marginTop="12dp"
+            android:layout_marginLeft="10dp"
+            android:textSize="16sp"
+            tools:ignore="RtlHardcoded" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0.8dp"
+            android:layout_marginTop="47dp"
+            android:background="@drawable/cursor_color"/>
+
+<!--aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-->
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="download path"
+            android:textColor="@color/colorblack"
+            android:layout_gravity="center|top"
+            android:layout_marginTop="60dp"
+            android:layout_marginRight="100dp"
+            android:textSize="18sp"
+            tools:ignore="RtlHardcoded" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="/picture/image_download"
+            android:textColor="@color/colortext"
+            android:layout_gravity="center|top"
+            android:layout_marginTop="62dp"
+            android:layout_marginLeft="85dp"
+            android:textSize="16sp"
+            tools:ignore="RtlHardcoded" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0.8dp"
+            android:layout_marginTop="97dp"
+            android:background="@drawable/cursor_color"/>
+
+<!--aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="image info"
+            android:textColor="@color/colorblack"
+            android:layout_gravity="center|top"
+            android:layout_marginTop="110dp"
+            android:layout_marginRight="100dp"
+            android:textSize="18sp"
+            tools:ignore="RtlHardcoded" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="155dp"
+                android:layout_marginRight="95dp"
+                android:layout_gravity="center|top"
+                android:src="@drawable/splash"
+                />
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Icon made by Good Ware from\nwww.flaticon.com"
+            android:textColor="@color/colortext"
+            android:layout_gravity="center|top"
+            android:layout_marginTop="160dp"
+            android:layout_marginLeft="67dp"
+            android:textSize="16sp"
+            tools:ignore="RtlHardcoded" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0.8dp"
+            android:layout_marginTop="220dp"
+            android:background="@drawable/cursor_color"/>
+
+<!--aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-->
+
+
+    </FrameLayout>
+
 </LinearLayout>

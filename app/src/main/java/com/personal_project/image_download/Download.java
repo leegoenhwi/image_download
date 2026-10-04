@@ -1,398 +1,268 @@
 package com.personal_project.image_download;
 
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
-import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
-import android.util.Log;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-
+import com.personal_project.image_download.support.ImageExtractor;
+import com.personal_project.image_download.support.ImageSaver;
 import com.personal_project.image_download.support.ListAdapter;
 import com.personal_project.image_download.support.list;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Set;
 
-@SuppressLint("Registered")
-public class Download extends AppCompatActivity implements View.OnClickListener{
+/**
+ * 입력된 주소에서 이미지를 찾아 목록으로 보여준다.
+ * 두 가지 방법을 함께 사용한다.
+ *  1) Jsoup 으로 원본 HTML 파싱 (빠름)
+ *  2) WebView 로 JavaScript 까지 실행한 뒤의 HTML 파싱 (동적으로 생성되는 이미지 대응)
+ * 두 결과는 합쳐지고 중복은 제거된다.
+ */
+public class Download extends AppCompatActivity implements View.OnClickListener {
 
-    private ImageView dowmload_back_arrow;
-    private String htmlpageURL = "";
+    private static final int SOURCES = 2;
 
-    private Thread thread;
-    private Crawling crawling;
-    private Crawling_Handler handler;
-    private TextView one;
+    private final Handler ui = new Handler(Looper.getMainLooper());
 
-    private FrameLayout nestedScrollView;
-    private WebView webView;
-    private WebSettings settings;
+    private String htmlpageURL;
+    private ImageView back_arrow;
+    private TextView downloadAll;
+    private TextView message;
+    private FrameLayout container;
     private ProgressBar progressBar;
-
-    private boolean once = false;
-
     private RecyclerView recyclerView;
-    private LinearLayout linearLayout;
+    private WebView webView;
 
     private ListAdapter listAdapter;
 
-    private ArrayList<list> mArrayList;
-    private RecyclerView.LayoutManager mLayoutManager;
+    private int finishedSources = 0;
+    private boolean listShown = false;
+    private boolean webCaptured = false;
+    private boolean destroyed = false;
 
-    private int js_count = 0;
-
-
-    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.download);
 
-        initui();
+        back_arrow = findViewById(R.id.download_back_arrow);
+        downloadAll = findViewById(R.id.download_all);
+        container = findViewById(R.id.ned);
+        progressBar = findViewById(R.id.circularProgressbar);
+        back_arrow.setOnClickListener(this);
+        downloadAll.setOnClickListener(this);
 
-        thread.start();
-//
-        webView.loadUrl(htmlpageURL);
+        message = new TextView(this);
+        recyclerView = new RecyclerView(this);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        listAdapter = new ListAdapter(this, new ArrayList<list>());
+        recyclerView.setAdapter(listAdapter);
 
+        htmlpageURL = ImageExtractor.normalizeUrl(getIntent().getStringExtra("URL_KEY"));
+        if (htmlpageURL == null) {
+            showMessage("error \n (잘못된 주소입니다. 주소를 확인해주세요)");
+            return;
+        }
+        listAdapter.setReferer(htmlpageURL);
 
+        startJsoup();
+        startWebView();
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
-    private void webview_setting()
-    {
+    // ---- 1) Jsoup ----------------------------------------------------------------------------
 
+    private void startJsoup() {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Set<String> found = null;
+                try {
+                    Document doc = Jsoup.connect(htmlpageURL)
+                            .userAgent(ImageSaver.USER_AGENT)
+                            .referrer(htmlpageURL)
+                            .timeout(15000)
+                            .followRedirects(true)
+                            .maxBodySize(0)
+                            .get();
+                    found = ImageExtractor.extract(doc, doc.location());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                final Set<String> result = found;
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        sourceFinished(result);
+                    }
+                });
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+    }
 
-        // 자바스크립트인터페이스 연결
+    // ---- 2) WebView --------------------------------------------------------------------------
+
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
+    private void startWebView() {
+        webView = new WebView(this);
+        WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
-        // 이걸 통해 자바스크립트 내에서 자바함수에 접근할 수 있음.
-        webView.addJavascriptInterface(new MyJavascriptInterface(), "Android");
-        // 페이지가 모두 로드되었을 때, 작업 정의
+        settings.setDomStorageEnabled(true);
+        settings.setUserAgentString(ImageSaver.USER_AGENT);
+        settings.setBlockNetworkImage(true);   // 이미지 자체는 받을 필요 없음 (주소만 필요)
+        webView.addJavascriptInterface(new HtmlBridge(), "Android");
+
         webView.setWebViewClient(new WebViewClient() {
             @Override
-            public void onPageFinished(WebView view, String url) {
+            public void onPageFinished(final WebView view, String url) {
                 super.onPageFinished(view, url);
-                // 자바스크립트 인터페이스로 연결되어 있는 getHTML를 실행
-                // 자바스크립트 기본 메소드로 html 소스를 통째로 지정해서 인자로 넘김
-                view.loadUrl("javascript:window.Android.getHtml(document.getElementsByTagName('body')[0].innerHTML);");
+                if (webCaptured) return;
+                // lazy-load 이미지를 위해 끝까지 스크롤한 뒤 잠시 기다렸다가 HTML 을 가져온다
+                view.loadUrl("javascript:(function(){window.scrollTo(0,document.body.scrollHeight);})()");
+                ui.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (destroyed || webCaptured) return;
+                        webCaptured = true;
+                        view.loadUrl("javascript:window.Android.getHtml(location.href,"
+                                + "document.documentElement.outerHTML);");
+                    }
+                }, 1500);
             }
 
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                 super.onReceivedError(view, errorCode, description, failingUrl);
-
-                System.out.println("onReceivedError 에러");
-
-                switch (errorCode) {
-                    case ERROR_AUTHENTICATION:
-                                  // 서버에서 사용자 인증 실패
-                    case ERROR_BAD_URL:
-                                                 // 잘못된 URL
-                    case ERROR_CONNECT:
-                                               // 서버로 연결 실패
-                    case ERROR_FAILED_SSL_HANDSHAKE:
-                         // SSL handshake 수행 실패
-                    case ERROR_FILE:
-                                                        // 일반 파일 오류
-                    case ERROR_FILE_NOT_FOUND:
-                                    // 파일을 찾을 수 없습니다
-                    case ERROR_HOST_LOOKUP:
-                                 // 서버 또는 프록시 호스트 이름 조회 실패
-                    case ERROR_IO:
-                                                     // 서버에서 읽거나 서버로 쓰기 실패
-                    case ERROR_PROXY_AUTHENTICATION:
-                        // 프록시에서 사용자 인증 실패
-                    case ERROR_REDIRECT_LOOP:
-                                      // 너무 많은 리디렉션
-                    case ERROR_TIMEOUT:
-                                               // 연결 시간 초과
-                    case ERROR_TOO_MANY_REQUESTS:
-                           // 페이지 로드중 너무 많은 요청 발생
-                    case ERROR_UNKNOWN:
-                        // 일반 오류
-                    case ERROR_UNSUPPORTED_AUTH_SCHEME:
-
-                        // 지원되지 않는 인증 체계
-                    case ERROR_UNSUPPORTED_SCHEME:
-                    default:
-                        handler.sendEmptyMessage(1);
-                        break;
+                // 메인 페이지 로드가 실패한 경우에만 이 소스를 종료 처리 (하위 리소스 오류는 무시)
+                if (failingUrl != null && failingUrl.equals(htmlpageURL) && !webCaptured) {
+                    webCaptured = true;
+                    sourceFinished(null);
                 }
-
             }
         });
 
+        // 안전장치: 20초 안에 WebView 결과가 없으면 포기하고 계속 진행
+        ui.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!destroyed && !webCaptured) {
+                    webCaptured = true;
+                    sourceFinished(null);
+                }
+            }
+        }, 20000);
+
+        webView.loadUrl(htmlpageURL);
     }
 
-
-
-    private void getURL()
-    {
-        Intent intent = getIntent(); //이 액티비티를 부른 인텐트를 받는다.
-        htmlpageURL = intent.getStringExtra("URL_KEY"); //"jizard"문자 받아옴
-
+    public class HtmlBridge {
+        @JavascriptInterface
+        public void getHtml(final String pageUrl, final String html) {
+            Set<String> found = null;
+            try {
+                found = ImageExtractor.extract(Jsoup.parse(html, pageUrl), pageUrl);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            final Set<String> result = found;
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    sourceFinished(result);
+                }
+            });
+        }
     }
 
-    private void find_id()
-    {
-        dowmload_back_arrow = findViewById(R.id.download_back_arrow);
-        one = new TextView(this);
-        recyclerView = new RecyclerView(this);
-        nestedScrollView = findViewById(R.id.ned);
+    // ---- 결과 처리 ---------------------------------------------------------------------------
 
-        progressBar = findViewById(R.id.circularProgressbar);
-        webView = new WebView(this);
-        settings = webView.getSettings();
-        handler = new Crawling_Handler();
-        crawling = new Crawling();
+    private boolean anySucceeded = false;
 
-        linearLayout = new LinearLayout(this);
+    private void sourceFinished(Set<String> urls) {
+        if (destroyed) return;
+        finishedSources++;
+        if (urls != null) {
+            anySucceeded = true;
+            for (String u : urls) {
+                listAdapter.addItem(u);
+            }
+        }
 
-        mArrayList = new ArrayList<list>();
-        listAdapter = new ListAdapter(this,mArrayList);
+        if (listAdapter.getItemCount() > 0) {
+            showList();
+        } else if (finishedSources >= SOURCES) {
+            if (anySucceeded) {
+                showMessage("no image \n (이미지를 찾을 수 없습니다)");
+            } else {
+                showMessage("error \n (잘못된 주소 또는 인터넷 연결 확인)");
+            }
+        }
     }
 
-    private void thread_setting()
-    {
-        thread = new Thread(crawling);
-        thread.setDaemon(true);
+    private void showList() {
+        progressBar.setVisibility(View.GONE);
+        downloadAll.setVisibility(View.VISIBLE);
+        if (!listShown) {
+            listShown = true;
+            container.removeAllViews();
+            container.addView(recyclerView, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        }
     }
 
-    private void initui()
-    {
-        find_id();
-        dowmload_back_arrow.setOnClickListener(this);
-        thread_setting();
-        getURL();
-        webview_setting();
-        listview_setting();
+    private void showMessage(String text) {
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+        params.gravity = Gravity.CENTER;
+        message.setLayoutParams(params);
+        message.setTextColor(Color.BLACK);
+        message.setGravity(Gravity.CENTER);
+        message.setText(text);
+        progressBar.setVisibility(View.GONE);
+        container.removeAllViews();
+        container.addView(message);
     }
 
     @Override
     public void onClick(View view) {
-        switch (view.getId())
-        {
-            case R.id.download_back_arrow:
-                finish();
-                break;
+        int id = view.getId();
+        if (id == R.id.download_back_arrow) {
+            finish();
+        } else if (id == R.id.download_all) {
+            listAdapter.downloadAll();
         }
     }
 
     @Override
-    protected void onResume() {
-
-//        thread.start();
-        super.onResume();
-
-    }
-
-    @Override
-    protected void onPause() {
-
-        super.onPause();
-
-    }
-
-
-    public class MyJavascriptInterface {
-        @JavascriptInterface
-        public void getHtml(String html) {
-            //위 자바스크립트가 호출되면 여기로 html이 반환됨
-
-            System.out.println("js 실행");
-
-            if(js_count >= 2 || once)
-            {
-                return;
-            }
-
-
-            try {
-                Document doc = Jsoup.parse(html);
-
-                for (Element e : doc.select("img")) {
-
-                    if (e.attr("src") != null) {
-//                        image_arrayList.add(e.attr("src"));
-                        listAdapter.addItem(e.attr("src"));
-                    }
-
-                }
-            }catch (Exception e) {
-
-                Log.d("cheeeeck","js catch");
-
-                e.printStackTrace();
-                handler.sendEmptyMessage(1);
-                return;
-            }
-
-            Log.d("cheeeeck","imame_size" + listAdapter.getItemCount());
-
-            js_count++;
-            handler.sendEmptyMessage(0);
-
-
-
+    protected void onDestroy() {
+        destroyed = true;
+        ui.removeCallbacksAndMessages(null);
+        if (webView != null) {
+            webView.stopLoading();
+            webView.destroy();
         }
+        listAdapter.shutdown();
+        super.onDestroy();
     }
-
-
-
-    class Crawling implements Runnable{
-
-        @Override
-        public void run() {
-
-            System.out.println("Crawling 실행");
-
-            try {
-
-                System.out.println("run 실행");
-
-                Document doc = (Document) Jsoup.connect(htmlpageURL).get();
-
-                for (Element e : doc.select("img")) {
-
-                    if( e.attr("src") != null){
-//                        image_arrayList.add(e.attr("src"));
-                        listAdapter.addItem(e.attr("src"));
-                    }
-
-                }
-
-
-
-            } catch (Exception e) {
-
-                Log.d("cheeeeck","thread catch");
-
-                e.printStackTrace();
-//                handler.sendEmptyMessage(1);
-            }
-
-            //handler.sendEmptyMessage(0);
-        }
-
-
-    }
-
-    @SuppressLint("HandlerLeak")
-    class Crawling_Handler extends Handler{
-//             String empty = "";
-
-            @SuppressLint("HandlerLeak")
-            @Override
-            public void handleMessage(@NonNull Message msg) {
-
-                if(msg.what == 0){   // Message id 가 0 이면
-
-                    Log.d("cheeeeck","handle : 0");
-
-                    if(listAdapter.getItemCount() == 0)
-                    {
-                        data_process2();
-                        one.setText("no image of please wait \n (이미지 소스가 없거나 잠시만 기다려주세요)");
-                    }
-                    else{
-                        data_process();
-                    }
-
-                }
-
-                if(msg.what == 1)
-                {
-                    Log.d("cheeeeck","handle : 1");
-
-                    data_process2();
-                    one.setText("error \n (잘못된 주소 또는 인터넷 열결확인)");
-                }
-
-            }
-    }
-
-    private void data_process()
-    {
-
-
-
-        LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT);
-        lparams.gravity =Gravity.TOP;
-
-        progressBar.setVisibility(View.GONE);
-
-        if(!once) {
-
-            recyclerView.setLayoutParams(lparams);
-            linearLayout.setLayoutParams(lparams);
-            nestedScrollView.removeAllViews();
-            nestedScrollView.addView(linearLayout);
-            linearLayout.addView(recyclerView);
-
-            recyclerView.setAdapter(listAdapter);
-            once = true;
-        }
-
-    }
-
-
-    private void data_process2()
-    {
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams
-                (FrameLayout.LayoutParams.MATCH_PARENT,FrameLayout.LayoutParams.MATCH_PARENT);
-
-        params.gravity = Gravity.CENTER;
-
-        one.setLayoutParams(params);
-        one.setTextColor(Color.BLACK);
-        one.setGravity(Gravity.CENTER);
-
-        progressBar.setVisibility(View.GONE);
-        nestedScrollView.removeAllViews();
-        nestedScrollView.addView(one);
-    }
-
-    private void listview_setting()
-    {
-        recyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
-        mLayoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(mLayoutManager);
-//        listView.setFastScrollEnabled(true);
-//        listView.setSmoothScrollbarEnabled(true);
-//        listView.setFastScrollAlwaysVisible(true);
-
-        //        listView.setSelector();
-    }
-
 }

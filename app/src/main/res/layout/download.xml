@@ -32,6 +32,18 @@
             android:src="@drawable/outline_keyboard_backspace_black_48dp"
             tools:ignore="ContentDescription,RtlHardcoded" />
 
+        <TextView
+            android:id="@+id/download_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center|right"
+            android:layout_marginRight="16dp"
+            android:padding="6dp"
+            android:text="@string/download_all"
+            android:textColor="@color/colormain"
+            android:textSize="15sp"
+            android:visibility="gone"
+            tools:ignore="RtlHardcoded" />
 
     </FrameLayout>
 

@@ -22,6 +22,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.personal_project.image_download.support.ImageExtractor;
+
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -129,6 +131,10 @@ public class MainFragment extends Fragment implements View.OnClickListener{
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.download_button:
+                if (ImageExtractor.normalizeUrl(text_input.getText().toString()) == null) {
+                    Toast.makeText(getContext(), "올바른 주소를 입력해주세요 (Enter a valid URL)", Toast.LENGTH_SHORT).show();
+                    break;
+                }
                 Intent Download_intent = new Intent(view.getContext(),Download.class);
                 Download_intent.putExtra("URL_KEY",text_input.getText().toString()); //키 - 보낼 값(밸류)
                 startActivity(Download_intent);

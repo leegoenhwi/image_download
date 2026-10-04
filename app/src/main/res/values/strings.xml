@@ -29,6 +29,7 @@
 
     <!-- download text -->
     <string name="download">download</string>
+    <string name="download_all">Download all</string>
 
     <!-- nav email -->
     <string name="email">10131751z@gmail.com</string>

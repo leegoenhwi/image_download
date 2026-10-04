@@ -1,49 +1,41 @@
 package com.personal_project.image_download.support;
 
-import android.graphics.drawable.Drawable;
-import android.widget.ProgressBar;
-
 public class list {
 
-    private String _name;
-    private Drawable _download_icon;
-    private ProgressBar _progressBar;
+    public static final int IDLE = 0;
+    public static final int DOWNLOADING = 1;
+    public static final int DONE = 2;
+    public static final int FAILED = 3;
 
-    private boolean _clicked = false;
+    private String _name;
+    private int _state = IDLE;
+    private int _progress = 0;
 
     public String getName() {
         return _name;
     }
 
-    public Drawable getdownloadicon() {
-
-        return _download_icon;
-    }
-
-    public boolean getclicked()
-    {
-        return _clicked;
-    }
-
-    public ProgressBar getProgressBar()
-    {
-        return _progressBar;
-    }
-
-    public void setdownloadicon(Drawable icon) {
-        _download_icon = icon ;
-    }
     public void setName(String name) {
-        _name = name ;
+        _name = name;
     }
 
-    private void set_progressBar(ProgressBar progressBar)
-    {
-        _progressBar = progressBar;
+    public int getState() {
+        return _state;
     }
 
-    public void setclicked(boolean clicked)
-    {
-        _clicked = clicked;
+    public void setState(int state) {
+        _state = state;
+    }
+
+    public int getProgress() {
+        return _progress;
+    }
+
+    public void setProgress(int progress) {
+        _progress = progress;
+    }
+
+    public boolean getclicked() {
+        return _state != IDLE && _state != FAILED;
     }
 }

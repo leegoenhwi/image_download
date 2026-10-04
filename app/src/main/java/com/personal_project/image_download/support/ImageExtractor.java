@@ -21,6 +21,9 @@ public class ImageExtractor {
             "data-original-src", "data-url", "data-img", "data-image", "data-echo", "data-actualsrc"
     };
 
+    private static final int MIN_SIZE = 48;   // 이보다 작게 표시되는 이미지는 아이콘/추적 픽셀로 간주
+    private static final Pattern JUNK_URL = Pattern.compile(
+            "(1x1|spacer|blank\\.|pixel|transparent\\.|/ads?/|doubleclick|googleads|analytics|beacon)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CSS_URL = Pattern.compile("url\\(\\s*['\"]?([^'\")]+?)['\"]?\\s*\\)", Pattern.CASE_INSENSITIVE);
     private static final Pattern IMAGE_EXT = Pattern.compile(
             "\\.(jpe?g|png|gif|webp|bmp|svg|avif|tiff?|ico)(\\?.*|#.*)?$", Pattern.CASE_INSENSITIVE);
@@ -56,17 +59,36 @@ public class ImageExtractor {
             doc.setBaseUri(baseUrl);
         }
 
+        // img 하나당 "가장 큰 원본" 하나만 선택 (srcset 의 모든 크기를 중복으로 나열하지 않음)
         for (Element img : doc.select("img")) {
-            for (String attr : LAZY_ATTRS) {
-                add(result, img, img.attr(attr));
+            if (isTiny(img)) continue;
+            // 큰 원본으로 연결된 썸네일이면 원본만 사용
+            Element parent = img.parent();
+            if (parent != null && parent.tagName().equals("a") && IMAGE_EXT.matcher(parent.attr("href")).find()) {
+                add(result, parent, parent.attr("href"));
+                continue;
             }
-            addSrcSet(result, img, img.attr("srcset"));
-            addSrcSet(result, img, img.attr("data-srcset"));
+            // picture 안의 img 는 아래 picture 처리에서 가장 큰 후보로 대체
+            if (parent != null && parent.tagName().equals("picture") && !parent.select("source[srcset]").isEmpty()) continue;
+            String best = bestFromSrcSet(img.attr("srcset"));
+            if (best == null) best = bestFromSrcSet(img.attr("data-srcset"));
+            if (best == null) {
+                // 지연 로딩 속성이 있으면 src(보통 placeholder/썸네일)보다 우선
+                for (int i = LAZY_ATTRS.length - 1; i >= 0 && best == null; i--) {
+                    String v = img.attr(LAZY_ATTRS[i]).trim();
+                    if (!v.isEmpty() && !v.startsWith("data:")) best = v;
+                }
+            }
+            add(result, img, best);
         }
 
-        for (Element source : doc.select("picture source, video[poster], source[srcset]")) {
-            addSrcSet(result, source, source.attr("srcset"));
-            add(result, source, source.attr("src"));
+        for (Element source : doc.select("picture")) {
+            String best = null;
+            for (Element s : source.select("source")) {
+                String c = bestFromSrcSet(s.attr("srcset"));
+                if (c != null) best = c;   // 같은 picture 안에서는 마지막(가장 큰/기본) 후보 하나만
+            }
+            add(result, source, best);
         }
         for (Element video : doc.select("video[poster]")) {
             add(result, video, video.attr("poster"));
@@ -108,14 +130,41 @@ public class ImageExtractor {
         }
     }
 
-    private static void addSrcSet(Set<String> out, Element ctx, String srcset) {
-        if (srcset == null || srcset.trim().isEmpty()) return;
+    /** srcset 에서 w/x 값이 가장 큰 후보의 원본 URL 을 반환. */
+    private static String bestFromSrcSet(String srcset) {
+        if (srcset == null || srcset.trim().isEmpty()) return null;
+        String best = null;
+        double bestScore = -1;
         for (String part : srcset.split(",(?=\\s|$)|,\\s+")) {
-            String p = part.trim();
-            if (p.isEmpty()) continue;
-            String u = p.split("\\s+")[0];
-            add(out, ctx, u);
+            String[] tok = part.trim().split("\\s+");
+            if (tok[0].isEmpty()) continue;
+            double score = 1;
+            if (tok.length > 1) {
+                try {
+                    score = Double.parseDouble(tok[1].replaceAll("[^0-9.]", ""));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            if (score > bestScore) {
+                bestScore = score;
+                best = tok[0];
+            }
         }
+        return best;
+    }
+
+    /** 1x1 추적 픽셀, 작은 아이콘 등 의미 없는 이미지 판별 (width/height 속성 기준). */
+    private static boolean isTiny(Element img) {
+        int w = px(img.attr("width"));
+        int h = px(img.attr("height"));
+        return (w > 0 && w <= MIN_SIZE) || (h > 0 && h <= MIN_SIZE);
+    }
+
+    private static int px(String v) {
+        if (v == null) return -1;
+        String d = v.replaceAll("[^0-9]", "");
+        if (d.isEmpty() || d.length() > 5 || v.contains("%")) return -1;
+        return Integer.parseInt(d);
     }
 
     private static void add(Set<String> out, Element ctx, String raw) {
@@ -137,8 +186,9 @@ public class ImageExtractor {
                 return;
             }
         }
-        if (abs.startsWith("http://") || abs.startsWith("https://")) {
-            out.add(abs);
+        if ((abs.startsWith("http://") || abs.startsWith("https://")) && !JUNK_URL.matcher(abs).find()) {
+            int hash = abs.indexOf('#');
+            out.add(hash >= 0 ? abs.substring(0, hash) : abs);
         }
     }
 }

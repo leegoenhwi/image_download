@@ -3,6 +3,7 @@ package com.personal_project.image_download.support;
 import android.content.Context;
 import android.media.MediaScannerConnection;
 import android.os.Environment;
+import android.util.Base64;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -22,6 +23,22 @@ public class ImageSaver {
         void onProgress(int percent);
     }
 
+    /** 로그인/봇 확인 쿠키가 있어야 받아지는 이미지를 위해 WebView 의 쿠키를 넘겨준다. */
+    public interface CookieSource {
+        String cookieFor(String url);
+    }
+
+    public static volatile CookieSource cookies;
+
+    public static String cookieFor(String url) {
+        CookieSource c = cookies;
+        try {
+            return c == null ? null : c.cookieFor(url);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static File saveDir() {
         return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "image_download");
     }
@@ -30,6 +47,10 @@ public class ImageSaver {
         File dir = saveDir();
         if (!dir.exists() && !dir.mkdirs()) {
             throw new IllegalStateException("cannot create " + dir);
+        }
+
+        if (imageUrl.startsWith("data:")) {
+            return saveDataUri(context, dir, imageUrl, progress);
         }
 
         HttpURLConnection conn = open(imageUrl, referer);
@@ -70,6 +91,28 @@ public class ImageSaver {
         }
     }
 
+    /** data:image/png;base64,.... 형식의 이미지 저장 */
+    private static File saveDataUri(Context context, File dir, String uri, Progress progress) throws Exception {
+        int comma = uri.indexOf(',');
+        if (comma < 0) throw new IllegalArgumentException("bad data uri");
+        String meta = uri.substring(5, comma);              // image/png;base64
+        String payload = uri.substring(comma + 1);
+        byte[] bytes = meta.endsWith(";base64")
+                ? Base64.decode(payload, Base64.DEFAULT)
+                : URLDecoder.decode(payload, "UTF-8").getBytes("UTF-8");
+        String ext = extension("", meta.split(";")[0]);
+        File file = uniqueFile(dir, "inline_image", ext);
+        FileOutputStream fos = new FileOutputStream(file);
+        try {
+            fos.write(bytes);
+        } finally {
+            fos.close();
+        }
+        if (progress != null) progress.onProgress(100);
+        MediaScannerConnection.scanFile(context, new String[]{file.getAbsolutePath()}, null, null);
+        return file;
+    }
+
     private static HttpURLConnection open(String url, String referer) throws Exception {
         String current = url;
         for (int i = 0; i < 5; i++) {   // http <-> https 리다이렉트 포함 수동 처리
@@ -80,6 +123,8 @@ public class ImageSaver {
             conn.setRequestProperty("User-Agent", USER_AGENT);
             conn.setRequestProperty("Accept", "image/*,*/*;q=0.8");
             if (referer != null) conn.setRequestProperty("Referer", referer);
+            String cookie = cookieFor(current);
+            if (cookie != null && !cookie.isEmpty()) conn.setRequestProperty("Cookie", cookie);
             int code = conn.getResponseCode();
             if (code >= 300 && code < 400) {
                 String loc = conn.getHeaderField("Location");

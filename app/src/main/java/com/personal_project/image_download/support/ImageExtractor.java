@@ -1,10 +1,16 @@
 package com.personal_project.image_download.support;
 
+import org.jsoup.Jsoup;
+import org.jsoup.UnsupportedMimeTypeException;
+import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -20,6 +26,13 @@ public class ImageExtractor {
             "src", "data-src", "data-original", "data-lazy-src", "data-lazy",
             "data-original-src", "data-url", "data-img", "data-image", "data-echo", "data-actualsrc"
     };
+
+    /** 이름에 이런 단어가 들어간 data-* 속성은 보통 원본(확대) 이미지 */
+    private static final Pattern HIRES_ATTR = Pattern.compile("zoom|large|full|orig|hires|hi-res|big|hd|max", Pattern.CASE_INSENSITIVE);
+    /** img 가 아닌 요소에서 이미지 주소를 담는 data-* 속성 이름 */
+    private static final Pattern IMAGE_ATTR = Pattern.compile("bg|background|image|img|src|original|poster|photo|zoom|full|large|thumb", Pattern.CASE_INSENSITIVE);
+    /** 이보다 짧은 data: 이미지는 placeholder 로 간주 */
+    private static final int MIN_DATA_URI = 2000;
 
     private static final int MIN_SIZE = 48;   // 이보다 작게 표시되는 이미지는 아이콘/추적 픽셀로 간주
     private static final Pattern JUNK_URL = Pattern.compile(
@@ -54,6 +67,49 @@ public class ImageExtractor {
         return url;
     }
 
+    /**
+     * 1) 페이지 원본 HTML 을 받아서 이미지를 찾는다 (백그라운드 스레드).
+     * 주소 자체가 이미지이면 그 주소 하나를 돌려준다.
+     */
+    public static Set<String> fromUrl(String url, String userAgent) throws IOException {
+        try {
+            Document doc = Jsoup.connect(url)
+                    .userAgent(userAgent)
+                    .referrer(url)
+                    .timeout(15000)
+                    .followRedirects(true)
+                    .maxBodySize(0)
+                    .get();
+            return extract(doc, doc.location());
+        } catch (UnsupportedMimeTypeException e) {
+            if (e.getMimeType() != null && e.getMimeType().startsWith("image/")) {
+                return new LinkedHashSet<String>(Collections.singletonList(e.getUrl()));
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * 2) WebView 가 JavaScript 실행/스크롤 후 넘겨준 결과에서 이미지를 찾는다.
+     * @param frames 같은 도메인 iframe 및 Shadow DOM 의 {주소, HTML}
+     * @param extras 브라우저가 계산한 배경 이미지 등 절대 주소 (줄바꿈 구분)
+     */
+    public static Set<String> fromRendered(String pageUrl, String html, List<String[]> frames, String extras) {
+        Set<String> result = extract(Jsoup.parse(html, pageUrl), pageUrl);
+        if (frames != null) {
+            for (String[] f : frames) {
+                result.addAll(extract(Jsoup.parse(f[1], f[0]), f[0]));
+            }
+        }
+        if (extras != null && !extras.isEmpty()) {
+            Document ctx = Jsoup.parse("", pageUrl);
+            for (String u : extras.split("\n")) {
+                add(result, ctx, u);
+            }
+        }
+        return result;
+    }
+
     /** doc 은 baseUrl 기준으로 파싱된 문서여야 한다. */
     public static Set<String> extract(Document doc, String baseUrl) {
         Set<String> result = new LinkedHashSet<String>();
@@ -77,6 +133,15 @@ public class ImageExtractor {
                 add(result, parent, parent.attr("href"));
                 continue;
             }
+            // data-zoom-image 처럼 이름으로 보아 원본인 속성이 있으면 최우선
+            String hires = null, otherData = null;
+            for (Attribute at : img.attributes()) {
+                String key = at.getKey().toLowerCase(Locale.ROOT);
+                if (!key.startsWith("data-") || !looksLikeImageUrl(at.getValue())) continue;
+                if (HIRES_ATTR.matcher(key.substring(5)).find()) hires = at.getValue();
+                else if (otherData == null) otherData = at.getValue();
+            }
+            if (hires != null) best = hires;
             if (best == null) {
                 // 지연 로딩 속성이 있으면 src(보통 placeholder/썸네일)보다 우선
                 for (int i = LAZY_ATTRS.length - 1; i >= 0 && best == null; i--) {
@@ -84,6 +149,8 @@ public class ImageExtractor {
                     if (!v.isEmpty() && !v.startsWith("data:")) best = v;
                 }
             }
+            if (best == null) best = otherData;            // 이름을 모르는 lazy 속성 (data-xxx="a.jpg")
+            if (best == null) best = img.attr("src");      // base64 로 박힌 이미지
             add(result, img, best);
         }
 
@@ -97,6 +164,19 @@ public class ImageExtractor {
         }
         for (Element video : doc.select("video[poster]")) {
             add(result, video, video.attr("poster"));
+        }
+
+        // div 등에 data-bg="..." 처럼 지연 로딩용으로 들어있는 이미지
+        for (Element e : doc.getAllElements()) {
+            if (e.tagName().equals("img")) continue;
+            for (Attribute at : e.attributes()) {
+                String key = at.getKey().toLowerCase(Locale.ROOT);
+                if (key.startsWith("data-") && IMAGE_ATTR.matcher(key.substring(5)).find()) {
+                    String v = at.getValue();
+                    if (key.contains("srcset")) v = bestFromSrcSet(v);
+                    if (v != null && looksLikeImageUrl(v)) add(result, e, v);
+                }
+            }
         }
 
         // svg 안의 <image href>
@@ -191,6 +271,12 @@ public class ImageExtractor {
         return best;
     }
 
+    private static boolean looksLikeImageUrl(String v) {
+        if (v == null) return false;
+        v = v.trim();
+        return v.startsWith("data:image/") ? v.length() >= MIN_DATA_URI : IMAGE_EXT.matcher(v.split("\\s")[0]).find();
+    }
+
     /** 이미지 파일을 직접 가리키는 링크인지. 위키의 "File:Cat.jpg" 같은 뷰어 페이지는 제외. */
     private static boolean isImageLink(String href) {
         if (href == null || !IMAGE_EXT.matcher(href).find()) return false;
@@ -218,7 +304,12 @@ public class ImageExtractor {
         String value = raw.trim();
         if (value.isEmpty()) return;
         String lower = value.toLowerCase(Locale.ROOT);
-        // 용량이 큰 data URI 는 목록에서 제외 (다운로드 대상이 아님)
+        if (lower.startsWith("data:image/")) {
+            // 페이지에 직접 박힌 이미지. 작은 것은 placeholder 이므로 제외
+            String compact = value.replaceAll("\\s", "");
+            if (compact.length() >= MIN_DATA_URI) out.add(compact);
+            return;
+        }
         if (lower.startsWith("data:") || lower.startsWith("javascript:") || lower.startsWith("blob:") || lower.startsWith("about:")) {
             return;
         }

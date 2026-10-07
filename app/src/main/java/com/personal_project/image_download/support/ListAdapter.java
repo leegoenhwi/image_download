@@ -73,16 +73,25 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.CustomViewHold
     public void onBindViewHolder(@NonNull final CustomViewHolder holder, int position) {
         final list item = mList.get(position);
 
-        // 일부 사이트는 Referer 없이는 이미지 로드를 막으므로 헤더를 함께 보낸다
-        LazyHeaders.Builder headers = new LazyHeaders.Builder().addHeader("User-Agent", ImageSaver.USER_AGENT);
-        if (referer != null) headers.addHeader("Referer", referer);
+        Object model;
+        if (item.getName().startsWith("data:")) {
+            model = item.getName();   // 페이지에 박힌 base64 이미지
+        } else {
+            // 일부 사이트는 Referer/쿠키 없이는 이미지 로드를 막으므로 헤더를 함께 보낸다
+            LazyHeaders.Builder headers = new LazyHeaders.Builder().addHeader("User-Agent", ImageSaver.USER_AGENT);
+            if (referer != null) headers.addHeader("Referer", referer);
+            String cookie = ImageSaver.cookieFor(item.getName());
+            if (cookie != null && !cookie.isEmpty()) headers.addHeader("Cookie", cookie);
+            model = new GlideUrl(item.getName(), headers.build());
+        }
         Glide.with(context)
-                .load(new GlideUrl(item.getName(), headers.build()))
+                .load(model)
                 .override(200, 200)
                 .error(R.drawable.ic_do_not_disturb_alt_black_24dp)
                 .into(holder.photo);
 
-        holder.name.setText(item.getName());
+        String name = item.getName();
+        holder.name.setText(name.startsWith("data:") ? "inline image (" + name.length() / 1366 + " KB)" : name);
         render(holder, item);
 
         holder.download_icon.setOnClickListener(new View.OnClickListener() {

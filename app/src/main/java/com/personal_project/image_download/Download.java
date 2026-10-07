@@ -1,6 +1,7 @@
 package com.personal_project.image_download;
 
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -42,6 +43,14 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
 
     private static final int SOURCES = 2;
 
+    /** 0.12초마다 0.9화면씩, 최대 40화면 스크롤 → 0.8초 대기 → HTML 전달 (최대 약 6초) */
+    static final String SCROLL_AND_CAPTURE_JS = "javascript:(function(){"
+            + "var y=0,h=document.documentElement.scrollHeight,step=Math.max(window.innerHeight*0.9,300),n=0;"
+            + "var t=setInterval(function(){y+=step;window.scrollTo(0,y);n++;"
+            + "if(y>=h||n>=40){clearInterval(t);setTimeout(function(){"
+            + "window.Android.getHtml(location.href,document.documentElement.outerHTML);},800);}},120);"
+            + "})()";
+
     private final Handler ui = new Handler(Looper.getMainLooper());
 
     private String htmlpageURL;
@@ -58,6 +67,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
     private int finishedSources = 0;
     private boolean listShown = false;
     private boolean webCaptured = false;
+    private boolean scrollStarted = false;
     private boolean destroyed = false;
 
     @Override
@@ -135,20 +145,19 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                scrollStarted = false;   // JS 리다이렉트로 새 페이지가 열리면 스크롤을 다시 시작
+            }
+
+            @Override
             public void onPageFinished(final WebView view, String url) {
                 super.onPageFinished(view, url);
-                if (webCaptured) return;
-                // lazy-load 이미지를 위해 끝까지 스크롤한 뒤 잠시 기다렸다가 HTML 을 가져온다
-                view.loadUrl("javascript:(function(){window.scrollTo(0,document.body.scrollHeight);})()");
-                ui.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (destroyed || webCaptured) return;
-                        webCaptured = true;
-                        view.loadUrl("javascript:window.Android.getHtml(location.href,"
-                                + "document.documentElement.outerHTML);");
-                    }
-                }, 1500);
+                if (webCaptured || scrollStarted) return;
+                scrollStarted = true;
+                // 화면에 보일 때만 로드되는 lazy 이미지를 위해 한 화면씩 내려가며 스크롤한 뒤 HTML 을 가져온다.
+                // 처음 페이지 높이까지만 내려가므로 무한 스크롤로 계속 불러오지는 않는다.
+                view.loadUrl(SCROLL_AND_CAPTURE_JS);
             }
 
             @Override
@@ -189,6 +198,8 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
             ui.post(new Runnable() {
                 @Override
                 public void run() {
+                    if (webCaptured) return;   // 타임아웃 등으로 이미 종료 처리된 경우
+                    webCaptured = true;
                     sourceFinished(result);
                 }
             });

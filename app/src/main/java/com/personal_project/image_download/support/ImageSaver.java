@@ -34,6 +34,11 @@ public class ImageSaver {
 
         HttpURLConnection conn = open(imageUrl, referer);
         try {
+            String type = conn.getContentType();
+            if (type != null && (type.startsWith("text/") || type.contains("json") || type.contains("javascript"))) {
+                // 이미지가 아니라 웹페이지(뷰어/에러 페이지)가 온 경우 저장하지 않는다
+                throw new IllegalStateException("not an image: " + type);
+            }
             int total = conn.getContentLength();
             String ext = extension(imageUrl, conn.getContentType());
             File file = uniqueFile(dir, baseName(imageUrl), ext);
@@ -68,7 +73,7 @@ public class ImageSaver {
     private static HttpURLConnection open(String url, String referer) throws Exception {
         String current = url;
         for (int i = 0; i < 5; i++) {   // http <-> https 리다이렉트 포함 수동 처리
-            HttpURLConnection conn = (HttpURLConnection) new URL(current).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) new URL(current.replace(" ", "%20")).openConnection();
             conn.setInstanceFollowRedirects(false);
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);

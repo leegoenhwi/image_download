@@ -24,6 +24,9 @@ public class ImageExtractor {
     private static final int MIN_SIZE = 48;   // 이보다 작게 표시되는 이미지는 아이콘/추적 픽셀로 간주
     private static final Pattern JUNK_URL = Pattern.compile(
             "(1x1|spacer|blank\\.|pixel|transparent\\.|/ads?/|doubleclick|googleads|analytics|beacon)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern JSONLD_IMAGE = Pattern.compile(
+            "\"(?:image|thumbnailUrl|contentUrl)\"\\s*:\\s*(\\[[^\\]]*\\]|\\{[^}]*\\}|\"[^\"]*\")");
+    private static final Pattern JSON_URL = Pattern.compile("\"(https?:[^\"]+)\"");
     private static final Pattern CSS_URL = Pattern.compile("url\\(\\s*['\"]?([^'\")]+?)['\"]?\\s*\\)", Pattern.CASE_INSENSITIVE);
     private static final Pattern IMAGE_EXT = Pattern.compile(
             "\\.(jpe?g|png|gif|webp|bmp|svg|avif|tiff?|ico)(\\?.*|#.*)?$", Pattern.CASE_INSENSITIVE);
@@ -55,23 +58,25 @@ public class ImageExtractor {
     public static Set<String> extract(Document doc, String baseUrl) {
         Set<String> result = new LinkedHashSet<String>();
         if (doc == null) return result;
-        if (baseUrl != null && !baseUrl.isEmpty()) {
+        // <base href> 가 있으면 파서가 이미 반영해 두었으므로 덮어쓰지 않는다
+        if (doc.baseUri().isEmpty() && baseUrl != null && !baseUrl.isEmpty()) {
             doc.setBaseUri(baseUrl);
         }
 
         // img 하나당 "가장 큰 원본" 하나만 선택 (srcset 의 모든 크기를 중복으로 나열하지 않음)
         for (Element img : doc.select("img")) {
             if (isTiny(img)) continue;
-            // 큰 원본으로 연결된 썸네일이면 원본만 사용
             Element parent = img.parent();
-            if (parent != null && parent.tagName().equals("a") && IMAGE_EXT.matcher(parent.attr("href")).find()) {
-                add(result, parent, parent.attr("href"));
-                continue;
-            }
             // picture 안의 img 는 아래 picture 처리에서 가장 큰 후보로 대체
             if (parent != null && parent.tagName().equals("picture") && !parent.select("source[srcset]").isEmpty()) continue;
             String best = bestFromSrcSet(img.attr("srcset"));
             if (best == null) best = bestFromSrcSet(img.attr("data-srcset"));
+            // srcset 이 없는 썸네일이 이미지 파일로 링크되어 있으면 링크(원본)를 사용.
+            // srcset 이 있으면 사이트가 이미 고해상도를 제공하는 것이고, 링크는 보통 뷰어 페이지(예: 위키 File:xxx.jpg)
+            if (best == null && parent != null && parent.tagName().equals("a") && isImageLink(parent.attr("href"))) {
+                add(result, parent, parent.attr("href"));
+                continue;
+            }
             if (best == null) {
                 // 지연 로딩 속성이 있으면 src(보통 placeholder/썸네일)보다 우선
                 for (int i = LAZY_ATTRS.length - 1; i >= 0 && best == null; i--) {
@@ -94,6 +99,21 @@ public class ImageExtractor {
             add(result, video, video.attr("poster"));
         }
 
+        // svg 안의 <image href>
+        for (Element image : doc.select("svg image")) {
+            String href = image.attr("href");
+            add(result, image, href.isEmpty() ? image.attr("xlink:href") : href);
+        }
+
+        // 구조화 데이터(JSON-LD) 의 대표 이미지 (쇼핑몰/뉴스에서 원본 해상도인 경우가 많음)
+        for (Element ld : doc.select("script[type=application/ld+json]")) {
+            Matcher m = JSONLD_IMAGE.matcher(ld.data());
+            while (m.find()) {
+                Matcher u = JSON_URL.matcher(m.group(1));
+                while (u.find()) add(result, ld, u.group(1).replace("\\/", "/"));
+            }
+        }
+
         for (Element meta : doc.select("meta[property=og:image], meta[property=og:image:url], meta[name=twitter:image], meta[itemprop=image]")) {
             add(result, meta, meta.attr("content"));
         }
@@ -102,8 +122,9 @@ public class ImageExtractor {
         }
 
         for (Element a : doc.select("a[href]")) {
+            if (!a.select("img").isEmpty()) continue;   // img 를 감싼 링크는 위에서 처리
             String href = a.attr("href");
-            if (IMAGE_EXT.matcher(href).find()) {
+            if (isImageLink(href)) {
                 add(result, a, href);
             }
         }
@@ -130,27 +151,52 @@ public class ImageExtractor {
         }
     }
 
-    /** srcset 에서 w/x 값이 가장 큰 후보의 원본 URL 을 반환. */
-    private static String bestFromSrcSet(String srcset) {
-        if (srcset == null || srcset.trim().isEmpty()) return null;
+    /**
+     * srcset 에서 w/x 값이 가장 큰 후보의 원본 URL 을 반환.
+     * "a.jpg 400w,b.jpg 800w" 처럼 쉼표 뒤 공백이 없어도, URL 안에 쉼표가 있어도(w_400,h_300) 처리한다.
+     */
+    static String bestFromSrcSet(String srcset) {
+        if (srcset == null) return null;
         String best = null;
         double bestScore = -1;
-        for (String part : srcset.split(",(?=\\s|$)|,\\s+")) {
-            String[] tok = part.trim().split("\\s+");
-            if (tok[0].isEmpty()) continue;
+        int i = 0, n = srcset.length();
+        while (i < n) {
+            while (i < n && (Character.isWhitespace(srcset.charAt(i)) || srcset.charAt(i) == ',')) i++;
+            if (i >= n) break;
+            int start = i;
+            while (i < n && !Character.isWhitespace(srcset.charAt(i))) i++;
+            String url = srcset.substring(start, i);
+            String descriptor = "";
+            if (url.endsWith(",")) {
+                url = url.replaceAll(",+$", "");
+            } else {
+                int d = i;
+                while (i < n && srcset.charAt(i) != ',') i++;
+                descriptor = srcset.substring(d, i).trim();
+            }
+            if (url.isEmpty()) continue;
             double score = 1;
-            if (tok.length > 1) {
+            String num = descriptor.replaceAll("[^0-9.]", "");
+            if (!num.isEmpty()) {
                 try {
-                    score = Double.parseDouble(tok[1].replaceAll("[^0-9.]", ""));
+                    score = Double.parseDouble(num);
                 } catch (NumberFormatException ignored) {
                 }
             }
             if (score > bestScore) {
                 bestScore = score;
-                best = tok[0];
+                best = url;
             }
         }
         return best;
+    }
+
+    /** 이미지 파일을 직접 가리키는 링크인지. 위키의 "File:Cat.jpg" 같은 뷰어 페이지는 제외. */
+    private static boolean isImageLink(String href) {
+        if (href == null || !IMAGE_EXT.matcher(href).find()) return false;
+        String path = href.split("[?#]")[0];
+        String last = path.substring(path.lastIndexOf('/') + 1);
+        return !last.contains(":");
     }
 
     /** 1x1 추적 픽셀, 작은 아이콘 등 의미 없는 이미지 판별 (width/height 속성 기준). */
@@ -176,6 +222,7 @@ public class ImageExtractor {
         if (lower.startsWith("data:") || lower.startsWith("javascript:") || lower.startsWith("blob:") || lower.startsWith("about:")) {
             return;
         }
+        value = value.replace(" ", "%20");
         String abs = ctx.absUrl(value);
         if (abs == null || abs.isEmpty()) {
             // absUrl 이 실패한 경우 (base uri 없음) 직접 해석
@@ -188,7 +235,10 @@ public class ImageExtractor {
         }
         if ((abs.startsWith("http://") || abs.startsWith("https://")) && !JUNK_URL.matcher(abs).find()) {
             int hash = abs.indexOf('#');
-            out.add(hash >= 0 ? abs.substring(0, hash) : abs);
+            if (hash >= 0) abs = abs.substring(0, hash);
+            // 루트 위로 올라가는 ../ 는 브라우저처럼 버린다 (http://a.com/../../x.jpg -> http://a.com/x.jpg)
+            abs = abs.replaceFirst("^(https?://[^/]+)(/\\.\\.)+(?=/)", "$1");
+            out.add(abs);
         }
     }
 }

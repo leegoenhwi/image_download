@@ -1,0 +1,69 @@
+<resources>
+    <string name="navigation_drawer_open">메뉴 열기</string>
+    <string name="navigation_drawer_close">메뉴 닫기</string>
+
+    <string name="tutorial">도움말</string>
+    <string name="dowmload_path">저장한 이미지</string>
+    <string name="mail">이메일 보내기</string>
+    <string name="info">앱 정보</string>
+    <string name="subtitle">문의</string>
+
+    <string name="main_title">이미지 다운로드</string>
+    <string name="main_subtitle">웹페이지 주소만 넣으면 페이지 속 이미지를 모두 찾아드려요.</string>
+    <string name="paste">붙여넣기</string>
+    <string name="clear">지우기</string>
+    <string name="find_images">이미지 찾기</string>
+    <string name="invalid_url">올바른 웹 주소를 입력해 주세요 (예: https://example.com).</string>
+    <string name="no_clipboard">복사한 주소가 없어요.</string>
+    <string name="clipboard_found">복사한 주소</string>
+    <string name="use">사용</string>
+    <string name="recent">최근 주소</string>
+    <string name="clear_all">지우기</string>
+    <string name="tips_title">알아두면 좋아요</string>
+    <string name="tip_share">브라우저에서 공유를 누르고 image download 를 고르면 바로 열려요.</string>
+    <string name="tip_save">이미지는 사진/image_download 에 저장되고 갤러리에서 볼 수 있어요.</string>
+    <string name="tip_preview">이미지를 누르면 선택돼요. 길게 누르면 크게 볼 수 있어요.</string>
+
+    <string name="download">이미지</string>
+    <string name="back">뒤로</string>
+    <string name="searching">이미지를 찾는 중…</string>
+    <string name="searching_hint">페이지를 열고 끝까지 훑어보는 중이에요.\n몇 초 걸릴 수 있어요.</string>
+    <string name="found_count">이미지 %1$d개</string>
+    <string name="found_count_searching">이미지 %1$d개 · 더 찾는 중…</string>
+    <string name="select_all">전체 선택</string>
+    <string name="deselect_all">선택 해제</string>
+    <string name="save_all">모두 저장 (%1$d)</string>
+    <string name="save_selected">선택 저장 (%1$d)</string>
+    <string name="saving">저장 중 %1$d/%2$d…</string>
+    <string name="bottom_hint">누르면 선택 · 길게 누르면 크게 보기</string>
+    <string name="selected_count">%2$d개 중 %1$d개 선택</string>
+    <string name="all_saved">모든 이미지를 저장했어요.</string>
+    <string name="saved_summary">%1$d장을 사진/image_download 에 저장했어요</string>
+    <string name="saved_summary_failed">%1$d장 저장, %2$d장 실패. 실패한 이미지를 누르면 다시 시도해요.</string>
+    <string name="open_gallery">갤러리</string>
+    <string name="save_failed">이 이미지를 저장하지 못했어요.</string>
+    <string name="badge_saved">저장됨</string>
+    <string name="badge_failed">실패 · 다시</string>
+    <string name="minor_header">로고·아이콘 등 (%1$d)</string>
+    <string name="empty_title">이미지를 찾지 못했어요</string>
+    <string name="empty_message">이미지가 없는 페이지이거나 로그인해야 보이는 페이지일 수 있어요.</string>
+    <string name="error_title">페이지를 열 수 없어요</string>
+    <string name="error_message">주소와 인터넷 연결을 확인해 주세요.</string>
+    <string name="invalid_title">주소가 올바르지 않아요</string>
+    <string name="retry">다시 시도</string>
+    <string name="permission_needed">이미지를 저장하려면 저장공간 권한이 필요해요.</string>
+    <string name="inline_image">페이지에 포함된 이미지 (%1$d KB)</string>
+
+    <string name="preview_save">저장</string>
+    <string name="preview_copy">주소 복사</string>
+    <string name="close">닫기</string>
+    <string name="copied">주소를 복사했어요</string>
+    <string name="saved_one">사진/image_download 에 저장했어요</string>
+
+    <string name="contents">1. 웹페이지 주소를 붙여넣고 [이미지 찾기]를 누르세요.\n2. 브라우저에서 공유 → image download 를 눌러도 돼요.\n3. 원하는 이미지를 눌러 선택하고 [저장]을 누르세요.\n    이미지를 길게 누르면 크게 볼 수 있어요.\n\n이미지는 사진/image_download 에 저장돼요.</string>
+    <string name="ok">확인</string>
+    <string name="version">버전</string>
+    <string name="save_location">저장 위치</string>
+    <string name="save_location_value">사진/image_download</string>
+    <string name="icons">아이콘</string>
+</resources>

@@ -10,6 +10,7 @@ public class list {
     private String _name;
     private int _state = IDLE;
     private int _progress = 0;
+    private boolean _selected = false;
 
     public String getName() {
         return _name;
@@ -33,6 +34,14 @@ public class list {
 
     public void setProgress(int progress) {
         _progress = progress;
+    }
+
+    public boolean isSelected() {
+        return _selected;
+    }
+
+    public void setSelected(boolean selected) {
+        _selected = selected;
     }
 
     public boolean getclicked() {

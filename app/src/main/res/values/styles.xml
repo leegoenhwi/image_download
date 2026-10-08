@@ -13,15 +13,18 @@
     </style>
 
     <!-- "Main Theme-->
-    <style name="MainTheme" parent="Theme.AppCompat.NoActionBar">
+    <style name="MainTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimaryDark">@color/colormain</item>
+        <item name="colorAccent">@color/colormain</item>
     </style>
 
     <!-- "Download Theme-->
-    <style name="DownloadTheme" parent="Theme.AppCompat.NoActionBar">
+    <!-- 진행 표시(스피너/진행 바)는 colorAccent 를 쓰므로 브랜드 색으로 -->
+    <style name="DownloadTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimaryDark">@color/colormain</item>
         <item name="colorPrimary">@color/colorwhite</item>
-        <item name="colorAccent">@color/colorwhite</item>
+        <item name="colorAccent">@color/colormain</item>
+        <item name="android:windowBackground">@color/colorbg</item>
     </style>
 
     <!-- AppBarLayout Theme-->
@@ -62,9 +65,10 @@
     </style>
 
     <!-- infoTheme-->
-    <style name="infoTheme" parent="Theme.AppCompat.NoActionBar">
+    <style name="infoTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimaryDark">@color/colormain</item>
         <item name="colorPrimary">@color/colorwhite</item>
-        <item name="colorAccent">@color/colorwhite</item>
+        <item name="colorAccent">@color/colormain</item>
+        <item name="android:windowBackground">@color/colorbg</item>
     </style>
 </resources>

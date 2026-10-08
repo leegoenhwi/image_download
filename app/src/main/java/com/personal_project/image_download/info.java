@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -27,6 +28,11 @@ public class info extends AppCompatActivity implements View.OnClickListener {
 
     private void find_id() {
         back_arrow = findViewById(R.id.info_back_arrow);
+        try {
+            String version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            ((TextView) findViewById(R.id.info_version)).setText(version);
+        } catch (Exception ignored) {
+        }
     }
 
     @Override

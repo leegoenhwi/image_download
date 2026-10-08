@@ -2,148 +2,117 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:orientation="vertical"
-    android:background="@color/colorwhite"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/colorbg"
+    android:orientation="vertical">
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:gravity="center"
-        tools:ignore="UnusedAttribute,UselessParent">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="@string/info"
-            android:textSize="17sp"
-            android:textColor="@color/colorblack"
-            android:gravity="center"/>
+        android:background="@color/colorwhite"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        tools:ignore="RtlHardcoded">
 
         <ImageView
             android:id="@+id/info_back_arrow"
-            android:background="@drawable/button_ripple_effect"
-            android:layout_gravity="center|left"
-            android:layout_marginLeft="12dp"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:src="@drawable/outline_keyboard_backspace_black_48dp"
-            tools:ignore="ContentDescription,RtlHardcoded" />
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginLeft="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back"
+            android:padding="12dp"
+            android:src="@drawable/ic_arrow_back_24" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="4dp"
+            android:text="@string/info"
+            android:textColor="@color/colorblack"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
-    </FrameLayout>
-
-
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:ignore="UselessLeaf">
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="app version"
-            android:textColor="@color/colorblack"
-            android:layout_gravity="center|top"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="100dp"
-            android:textSize="18sp"
-            tools:ignore="RtlHardcoded" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="v1.0"
-            android:textColor="@color/colortext"
-            android:layout_gravity="center|top"
-            android:layout_marginTop="12dp"
-            android:layout_marginLeft="10dp"
-            android:textSize="16sp"
-            tools:ignore="RtlHardcoded" />
-
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0.8dp"
-            android:layout_marginTop="47dp"
-            android:background="@drawable/cursor_color"/>
-
-<!--aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-->
-
-
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="download path"
-            android:textColor="@color/colorblack"
-            android:layout_gravity="center|top"
-            android:layout_marginTop="60dp"
-            android:layout_marginRight="100dp"
-            android:textSize="18sp"
-            tools:ignore="RtlHardcoded" />
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="/picture/image_download"
-            android:textColor="@color/colortext"
-            android:layout_gravity="center|top"
-            android:layout_marginTop="62dp"
-            android:layout_marginLeft="85dp"
-            android:textSize="16sp"
-            tools:ignore="RtlHardcoded" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/version"
+                android:textColor="@color/colortextsub"
+                android:textSize="13sp" />
 
-        <TextView
+            <TextView
+                android:id="@+id/info_version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="1.0"
+                android:textColor="@color/colorblack"
+                android:textSize="16sp" />
+        </LinearLayout>
+        <View
             android:layout_width="match_parent"
-            android:layout_height="0.8dp"
-            android:layout_marginTop="97dp"
-            android:background="@drawable/cursor_color"/>
-
-<!--aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-->
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="image info"
-            android:textColor="@color/colorblack"
-            android:layout_gravity="center|top"
-            android:layout_marginTop="110dp"
-            android:layout_marginRight="100dp"
-            android:textSize="18sp"
-            tools:ignore="RtlHardcoded" />
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_marginTop="155dp"
-                android:layout_marginRight="95dp"
-                android:layout_gravity="center|top"
-                android:src="@drawable/splash"
-                />
-
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="Icon made by Good Ware from\nwww.flaticon.com"
-            android:textColor="@color/colortext"
-            android:layout_gravity="center|top"
-            android:layout_marginTop="160dp"
-            android:layout_marginLeft="67dp"
-            android:textSize="16sp"
-            tools:ignore="RtlHardcoded" />
-
-        <TextView
+            android:layout_height="1dp"
+            android:background="@color/colorline" />
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0.8dp"
-            android:layout_marginTop="220dp"
-            android:background="@drawable/cursor_color"/>
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-<!--aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/save_location"
+                android:textColor="@color/colortextsub"
+                android:textSize="13sp" />
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/save_location_value"
+                android:textColor="@color/colorblack"
+                android:textSize="16sp" />
+        </LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorline" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-    </FrameLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/icons"
+                android:textColor="@color/colortextsub"
+                android:textSize="13sp" />
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/icon_credit"
+                android:textColor="@color/colorblack"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

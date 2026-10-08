@@ -23,4 +23,17 @@
 
     <!--    -->
     <color name="colorerror">#ffc0cb</color>
+
+    <!-- UI -->
+    <color name="colormain_dark">#00977B</color>
+    <color name="colormain_light">#E3F7F2</color>
+    <color name="colormain_pressed">#CDEFE6</color>
+    <color name="colorbg">#F4F6F8</color>
+    <color name="colorline">#E2E6EA</color>
+    <color name="colortextsub">#6B7280</color>
+    <color name="colordanger">#E5484D</color>
+    <color name="colordisabled">#B8C2CC</color>
+    <color name="colorthumb">#E9EDF1</color>
+    <color name="colorselected">#4000B594</color>
+    <color name="colortoast">#E6222831</color>
 </resources>

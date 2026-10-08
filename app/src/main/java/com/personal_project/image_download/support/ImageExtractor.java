@@ -2,9 +2,11 @@ package com.personal_project.image_download.support;
 
 import org.jsoup.Jsoup;
 import org.jsoup.UnsupportedMimeTypeException;
+import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
@@ -37,6 +39,11 @@ public class ImageExtractor {
     private static final Pattern IMG_URL_ATTR = Pattern.compile(
             "^(data-)?(.*(src|original|lazy|img|image|url|zoom|full|large|orig|hires|hi-res|retina|file|photo|echo).*)$", Pattern.CASE_INSENSITIVE);
     /** 이름으로 보아 원본(확대) 이미지를 담는 속성 */
+    /** 이름에 이미지라는 표시가 없는 속성(data-url, data-pin-url, data-slide-url …)은 페이지 주소일 때가 많아 확장자가 있어야 인정 */
+    private static final Pattern IMAGE_NAME_ATTR = Pattern.compile(
+            "src|original|lazy|img|image|zoom|full|large|orig|hires|hi-res|retina|photo|echo|thumb|poster|bg|background",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern SIZE_ATTR = Pattern.compile("(width|height|ratio|size|sizes|id|alt|title|caption|credit|type)$");
     private static final Pattern HIRES_ATTR = Pattern.compile("zoom|large|full|orig|hires|hi-res|retina|big|max");
     /** 값이 "photo.jpg" 처럼 경로 없이 와도 주소로 인정하는 지연 로딩 속성 */
     private static final Pattern LAZY_SRC_ATTR = Pattern.compile(
@@ -53,12 +60,21 @@ public class ImageExtractor {
     /** 확실한 잡음: 추적 픽셀, 광고/분석 서버, 사이트 아이콘, 프로필 기본 이미지 → 버림 */
     private static final Pattern JUNK_URL = Pattern.compile("(?i)("
             + "(^|[/._-])(1x1|spacer|pixel|tracking|beacon|blank|transparent|clear|shim)\\.(gif|png)"
+            // 지연 로딩 자리표시 그림: 1x1-f7f7f7ff.png, lazyload-transparent-image-data.gif
+            + "|/1x1[-_][^/]{0,20}\\.(gif|png|jpe?g)|lazy-?load[^/]*\\.(gif|png|svg)(\\?|$)|preloading\\.gif|/1px/|missing-image\\."
+            + "|/placeholder[-_]?\\d*\\.(jpe?g|png|gif|svg|webp)|[-_/]leer(\\?|\\.|$)|[-_]fallback\\.(svg|png|gif|jpe?g)"
+            + "|/(l?gr[ae]y|white)[-_]?bg\\.(gif|png)|/lazy[-_][a-z0-9]{1,3}\\.(png|gif|svg)|/[a-z]\\.gif(\\?|$)"
+            // 채워지지 않은 템플릿 주소 (404 가 난다): photo-{{size}}.jpg, ${url}
+            + "|\\{\\{|%7B%7B|\\$\\{|%24%7B"
             + "|/(ads|adserver|adx|adverts?|advertising)/|(?<!/[0-9a-f])/ad/"
             + "|[-_](300x250|728x90|160x600|320x50|300x600|970x250|970x90|468x60|336x280|120x600)[-_.]"
             + "|doubleclick\\.|googleads|googlesyndication|google-analytics|googletagmanager|scorecardresearch|quantserve"
             + "|chartbeat|taboola|outbrain|adsrvr|adnxs|criteo|amazon-adsystem|moatads|facebook\\.com/tr|bat\\.bing\\.com"
             + "|fwmrm\\.net|krxd\\.net|adsafeprotected|doubleverify|2mdn\\.net|serving-sys|flashtalking|adform\\.net"
             + "|smartadserver|casalemedia|demdex|rlcdn|bluekai|exelator|mathtag|3lift\\.com|teads\\.tv|mgid\\.com|revcontent"
+            // 방문자 카운터
+            + "|counter\\.yadro\\.ru|estat\\.com/|mc\\.yandex\\.|top-fwz1\\.mail\\.ru|counter\\.rambler|hotlog\\.ru|statcounter\\.com"
+            + "|histats\\.com|gemius\\.|tns-counter|/counter\\.(gif|png|php)|met\\.vgwort\\.de"
             + "|favicon|apple-touch-icon|mstile|gravatar\\.com/avatar|/emoji/|twemoji"
             // 아이콘 묶음(스프라이트) 이미지: /sprites/..., icons-sprite@2x.png, bubbleSprite_3.png, rv_mini_sprites_v2.png
             // (sprite-can.jpg 같은 사진은 제외: 스프라이트는 png/gif/svg/webp 이고 sprite 뒤가 짧다)
@@ -208,6 +224,7 @@ public class ImageExtractor {
             for (Attribute at : e.attributes()) {
                 String key = at.getKey().toLowerCase(Locale.ROOT);
                 if (!key.startsWith("data-") || !IMAGE_ATTR.matcher(key.substring(5)).find()) continue;
+                if (SIZE_ATTR.matcher(key).find()) continue;   // data-image-height="1500px//cdn..." 같은 깨진 값
                 String v = at.getValue().trim();
                 boolean anyUrl = key.contains("bg") || key.contains("background");
                 if (v.startsWith("{") || v.startsWith("[")) {
@@ -241,7 +258,8 @@ public class ImageExtractor {
 
         // 구조화 데이터(JSON-LD) 의 대표 이미지 (쇼핑몰/뉴스에서 원본 해상도인 경우가 많음)
         for (Element ld : doc.select("script[type=application/ld+json]")) {
-            for (String u : jsonLdImages(ld.data())) out.add(ld, u);
+            // 일부 CMS 는 JSON 안에도 &amp; / &#...; 를 그대로 넣는다
+            for (String u : jsonLdImages(ld.data())) out.add(ld, u.contains("&") ? Parser.unescapeEntities(u, false) : u);
         }
 
         for (Element meta : doc.select("meta[property~=(?i)^og:image(:url|:secure_url)?$], meta[name~=(?i)^(og:image|twitter:image(:src)?)$], meta[itemprop=image]")) {
@@ -291,7 +309,8 @@ public class ImageExtractor {
             } else if (key.startsWith("data-") || key.startsWith("lazy") || key.equals("original")) {
                 if (NON_URL_ATTR.matcher(key).find() && !LAZY_SRC_ATTR.matcher(key).matches()) continue;
                 boolean pathLike = v.contains("/") || LAZY_SRC_ATTR.matcher(key).matches();
-                if (pathLike && (IMG_URL_ATTR.matcher(key).matches() ? looksLikeUrl(v) : looksLikeImageUrl(v))) {
+                boolean nameSaysImage = IMG_URL_ATTR.matcher(key).matches() && IMAGE_NAME_ATTR.matcher(key).find();
+                if (pathLike && (nameSaysImage ? looksLikeUrl(v) : looksLikeImageUrl(v))) {
                     c.add(v);
                     if (LAZY_SRC_ATTR.matcher(key).matches() || HIRES_ATTR.matcher(key).find()) strong = true;
                 }
@@ -344,7 +363,7 @@ public class ImageExtractor {
     }
 
     private static String resolve(Element ctx, String value) {
-        String abs = ctx.absUrl(value.replace(" ", "%20"));
+        String abs = StringUtil.resolve(ctx.baseUri(), value.replace(" ", "%20"));
         return abs.isEmpty() ? value : abs;
     }
 
@@ -544,20 +563,15 @@ public class ImageExtractor {
             return null;
         }
         value = value.replace(" ", "%20").replace("&amp;", "&");
-        String abs = ctx.absUrl(value);
-        if (abs == null || abs.isEmpty()) {
-            // absUrl 이 실패한 경우 (base uri 없음) 직접 해석
-            try {
-                String base = ctx.baseUri();
-                abs = base == null || base.isEmpty() ? value : new URI(base).resolve(value).toString();
-            } catch (Exception e) {
-                return null;
-            }
-        }
+        // 브라우저처럼 너그럽게 해석 (java.net.URI 는 | ^ { } 가 든 주소를 통째로 거부한다)
+        String base = ctx.baseUri();
+        String abs = base == null || base.isEmpty() ? value : StringUtil.resolve(base, value);
         if (!(abs.startsWith("http://") || abs.startsWith("https://")) || JUNK_URL.matcher(abs).find()) return null;
         int hash = abs.indexOf('#');
         if (hash >= 0) abs = abs.substring(0, hash);
         // 루트 위로 올라가는 ../ 는 브라우저처럼 버린다 (http://a.com/../../x.jpg -> http://a.com/x.jpg)
-        return abs.replaceFirst("^(https?://[^/]+)(/\\.\\.)+(?=/)", "$1");
+        abs = abs.replaceFirst("^(https?://[^/]+)(/\\.\\.)+(?=/)", "$1");
+        // 한글/움라우트 파일명은 브라우저처럼 %XX 로 (같은 그림이 두 표기로 나뉘지 않고, 어느 기기에서나 받아지게)
+        return ImageVariants.encodeUrl(abs);
     }
 }

@@ -131,12 +131,13 @@ public class MainFragment extends Fragment implements View.OnClickListener{
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.download_button:
-                if (ImageExtractor.normalizeUrl(text_input.getText().toString()) == null) {
+                String url = ImageExtractor.normalizeUrl(text_input.getText().toString());
+                if (url == null) {
                     Toast.makeText(getContext(), "올바른 주소를 입력해주세요 (Enter a valid URL)", Toast.LENGTH_SHORT).show();
                     break;
                 }
                 Intent Download_intent = new Intent(view.getContext(),Download.class);
-                Download_intent.putExtra("URL_KEY",text_input.getText().toString()); //키 - 보낼 값(밸류)
+                Download_intent.putExtra("URL_KEY", url); //키 - 보낼 값(밸류)
                 startActivity(Download_intent);
 
                 break;
@@ -162,7 +163,8 @@ public class MainFragment extends Fragment implements View.OnClickListener{
     }
 
     private boolean grantExternalStoragePermission() {
-        if (Build.VERSION.SDK_INT >= 23) {
+        // Android 10 이상은 MediaStore 로 저장하므로 권한이 필요 없다
+        if (Build.VERSION.SDK_INT >= 23 && Build.VERSION.SDK_INT < 29) {
 
             if (ContextCompat.checkSelfPermission(getContext(),Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 Log.d("TAG", "Permission is granted");
@@ -175,7 +177,6 @@ public class MainFragment extends Fragment implements View.OnClickListener{
                 return false;
             }
         }else{
-            Toast.makeText(getContext(), "External Storage Permission is Grant", Toast.LENGTH_SHORT).show();
             Log.d("TAG", "External Storage Permission is Grant ");
             return true;
         }
@@ -185,7 +186,7 @@ public class MainFragment extends Fragment implements View.OnClickListener{
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= 23 && grantResults.length > 0) {
             if(grantResults[0]== PackageManager.PERMISSION_GRANTED){
                 Log.d("TAG","Permission: "+permissions[0]+ "was "+grantResults[0]);
                 //resume tasks needing this permission

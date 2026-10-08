@@ -1,8 +1,12 @@
 package com.personal_project.image_download;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,8 +21,12 @@ import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,11 +40,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 입력된 주소에서 이미지를 찾아 목록으로 보여준다.
+ * 입력된 주소(또는 브라우저에서 "공유" 로 받은 글)에서 이미지를 찾아 목록으로 보여준다.
  * 두 가지 방법을 함께 사용한다.
- *  1) Jsoup 으로 원본 HTML 파싱 (빠름)
+ *  1) Jsoup 으로 원본 HTML 파싱 (빠름, 먼저 목록을 보여줌)
  *  2) WebView 로 JavaScript 까지 실행한 뒤의 HTML 파싱 (동적으로 생성되는 이미지 대응)
- * 두 결과는 합쳐지고 중복은 제거된다.
+ * 두 결과는 합쳐지고, 같은 이미지의 크기만 다른 주소는 큰 쪽 하나로 정리된다.
  */
 public class Download extends AppCompatActivity implements View.OnClickListener {
 
@@ -75,9 +83,14 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
     /** onPageFinished 가 늦게 오는 페이지(광고/느린 스크립트)는 이 시간이 지나면 그냥 수집 시작 */
     private static final int FORCE_CAPTURE_MS = 10000;
 
+    private static final int REQUEST_STORAGE = 7;
+
     private final Handler ui = new Handler(Looper.getMainLooper());
 
     private String htmlpageURL;
+    private TextView title;
+    /** 저장 권한을 요청하는 동안 기다리는 다운로드 */
+    private Runnable pendingDownload;
     private ImageView back_arrow;
     private TextView downloadAll;
     private TextView message;
@@ -100,6 +113,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
         setContentView(R.layout.download);
 
         back_arrow = findViewById(R.id.download_back_arrow);
+        title = findViewById(R.id.download_title);
         downloadAll = findViewById(R.id.download_all);
         container = findViewById(R.id.ned);
         progressBar = findViewById(R.id.circularProgressbar);
@@ -111,8 +125,20 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         listAdapter = new ListAdapter(this, new ArrayList<list>());
         recyclerView.setAdapter(listAdapter);
+        listAdapter.setListener(new ListAdapter.Listener() {
+            @Override
+            public void onListChanged() {
+                updateTitle();
+            }
+        });
+        listAdapter.setDownloadGate(new ListAdapter.DownloadGate() {
+            @Override
+            public void runWithPermission(Runnable action) {
+                runWithStoragePermission(action);
+            }
+        });
 
-        htmlpageURL = ImageExtractor.normalizeUrl(getIntent().getStringExtra("URL_KEY"));
+        htmlpageURL = ImageExtractor.normalizeUrl(urlFromIntent(getIntent()));
         if (htmlpageURL == null) {
             showMessage("error \n (잘못된 주소입니다. 주소를 확인해주세요)");
             return;
@@ -121,6 +147,43 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
 
         startJsoup();
         startWebView();
+    }
+
+    /** 앱 첫 화면에서 넘어온 주소, 또는 브라우저 "공유" 로 받은 글(제목 + 주소) */
+    private static String urlFromIntent(Intent intent) {
+        if (intent == null) return null;
+        String url = intent.getStringExtra("URL_KEY");
+        if (url == null && Intent.ACTION_SEND.equals(intent.getAction())) {
+            url = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (url == null) url = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+        }
+        if (url == null && intent.getData() != null) url = intent.getData().toString();
+        return url;
+    }
+
+    // ---- 저장 권한 (Android 6~9 만 필요. 10 이상은 MediaStore 로 저장해서 권한 불필요) ----------
+
+    private void runWithStoragePermission(Runnable action) {
+        if (Build.VERSION.SDK_INT < 23 || Build.VERSION.SDK_INT >= 29
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            action.run();
+            return;
+        }
+        pendingDownload = action;
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_STORAGE);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQUEST_STORAGE) return;
+        Runnable action = pendingDownload;
+        pendingDownload = null;
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (action != null) action.run();
+        } else {
+            Toast.makeText(this, "저장 권한이 필요합니다 (Storage permission required)", Toast.LENGTH_LONG).show();
+        }
     }
 
     // ---- 1) Jsoup ----------------------------------------------------------------------------
@@ -309,6 +372,7 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
             }
         }
 
+        updateTitle();
         if (listAdapter.getItemCount() > 0) {
             showList();
         } else if (finishedSources >= SOURCES) {
@@ -318,6 +382,21 @@ public class Download extends AppCompatActivity implements View.OnClickListener 
                 showMessage("error \n (잘못된 주소 또는 인터넷 연결 확인)");
             }
         }
+    }
+
+    /** 상단 제목: "12 images (찾는 중...)" → 검색이 끝나면 "12 images · 3 saved" */
+    private void updateTitle() {
+        if (title == null || destroyed) return;
+        int total = listAdapter.getItemCount();
+        if (total == 0 && finishedSources < SOURCES) return;   // 아직 아무것도 못 찾았으면 기본 제목 + 로딩 표시
+        StringBuilder t = new StringBuilder().append(total).append(" images");
+        if (finishedSources < SOURCES) {
+            t.append(" (찾는 중...)");
+        } else {
+            int done = listAdapter.getDoneCount();
+            if (done > 0) t.append(" · ").append(done).append(" saved");
+        }
+        title.setText(t.toString());
     }
 
     private void showList() {
